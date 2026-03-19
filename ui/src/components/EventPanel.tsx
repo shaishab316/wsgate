@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Editor, { useMonaco } from "@monaco-editor/react";
 import { useWsgateStore } from "@/store/wsgate.store";
-import { useSocket } from "@/hooks/useSocket";
+import { useSocketStore } from "@/hooks/useSocket";
 
 // ── Helpers ───────────────────────────────────────────
 
@@ -98,8 +98,9 @@ const BASE_EDITOR_OPTIONS = {
 /**
  * Center panel for the nestjs-wsgate UI.
  *
- * Reads the selected event directly from the Zustand store —
- * no prop drilling required.
+ * Reads selected event from `useWsgateStore`.
+ * Reads socket emit and status from `useSocketStore`.
+ * Zero props — fully store-driven.
  *
  * Renders one of two views depending on the selected event type:
  *
@@ -113,13 +114,11 @@ const BASE_EDITOR_OPTIONS = {
  * - Info note directing users to watch the Event Log
  */
 export default function EventPanel() {
-  // ── Store ─────────────────────────────────────────────
+  // ── Stores ────────────────────────────────────────────
 
   const { selectedEvent, addLog } = useWsgateStore();
-
-  const { emit, status } = useSocket({
-    onEvent: (event, data) => addLog("in", event, data),
-  });
+  const { emit, status } = useSocketStore();
+  const connected = status === "connected";
 
   // ── State ────────────────────────────────────────────
 
@@ -396,10 +395,10 @@ export default function EventPanel() {
       {/* Emit button — disabled until connected */}
       <Button
         onClick={handleEmit}
-        disabled={status !== "connected"}
+        disabled={!connected}
         className="w-full bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {status === "connected" ? "Emit Event" : "Connect to emit"}
+        {connected ? "Emit Event" : "Connect to emit"}
       </Button>
     </div>
   );

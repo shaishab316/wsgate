@@ -7,8 +7,9 @@
  * @packageDocumentation
  */
 
-import { useState, useRef } from "react";
 import { io, Socket } from "socket.io-client";
+import { create } from "zustand";
+import { useWsgateStore } from "@/store/wsgate.store";
 
 // ── Types ─────────────────────────────────────────────
 
@@ -26,77 +27,28 @@ export type SocketStatus =
   | "error";
 
 /**
- * Options for the `useSocket` hook.
+ * The shape of the socket Zustand store.
  */
-interface UseSocketOptions {
-  /**
-   * Callback invoked whenever the server emits any event.
-   *
-   * @param event - The Socket.IO event name.
-   * @param data  - The payload received from the server.
-   */
-  onEvent: (event: string, data: unknown) => void;
-}
+interface SocketState {
+  /** Current connection status. */
+  status: SocketStatus;
 
-/**
- * A React hook that manages a Socket.IO connection lifecycle.
- *
- * Handles connecting, disconnecting, emitting events, and
- * listening to all incoming server events via `socket.onAny()`.
- *
- * @param options - Hook configuration. See {@link UseSocketOptions}.
- * @returns       Connection status and socket control functions.
- *
- * @example
- * const { status, connect, disconnect, emit } = useSocket({
- *   onEvent: (event, data) => console.log(event, data),
- * })
- */
-export function useSocket({ onEvent }: UseSocketOptions) {
-  const [status, setStatus] = useState<SocketStatus>("disconnected");
-  const socketRef = useRef<Socket | null>(null);
-
-  // ── Connect ───────────────────────────────────────────
+  /** Internal Socket.IO instance — not exposed to consumers. */
+  _socket: Socket | null;
 
   /**
-   * Establishes a Socket.IO connection to the given URL.
-   * Optionally passes an auth token via the `auth` handshake.
+   * Establishes a Socket.IO connection.
+   * Incoming events are automatically logged to the wsgate store.
    *
-   * @param url   - The server URL to connect to (e.g. `http://localhost:3000`).
+   * @param url   - The server URL to connect to.
    * @param token - Optional Bearer token for authenticated connections.
    */
-  function connect(url: string, token: string) {
-    setStatus("connecting");
-
-    const socket = io(url, {
-      auth: token ? { token } : {},
-      transports: ["websocket"],
-    });
-
-    socket.on("connect", () => setStatus("connected"));
-    socket.on("disconnect", () => setStatus("disconnected"));
-    socket.on("connect_error", () => setStatus("error"));
-
-    // Listen to ALL incoming server events and forward to callback
-    socket.onAny((event: string, data: unknown) => {
-      onEvent(event, data);
-    });
-
-    socketRef.current = socket;
-  }
-
-  // ── Disconnect ────────────────────────────────────────
+  connect: (url: string, token: string) => void;
 
   /**
    * Disconnects the active Socket.IO connection and resets state.
    */
-  function disconnect() {
-    socketRef.current?.disconnect();
-    socketRef.current = null;
-    setStatus("disconnected");
-  }
-
-  // ── Emit ──────────────────────────────────────────────
+  disconnect: () => void;
 
   /**
    * Emits a Socket.IO event to the server with the given payload.
@@ -104,9 +56,64 @@ export function useSocket({ onEvent }: UseSocketOptions) {
    * @param event   - The event name to emit.
    * @param payload - The data to send with the event.
    */
-  function emit(event: string, payload: unknown) {
-    socketRef.current?.emit(event, payload);
-  }
-
-  return { status, connect, disconnect, emit };
+  emit: (event: string, payload: unknown) => void;
 }
+
+// ── Store ─────────────────────────────────────────────
+
+/**
+ * Zustand store managing the Socket.IO connection lifecycle.
+ *
+ * Single instance shared across the entire app —
+ * no prop drilling, no duplicate connections.
+ *
+ * Incoming server events are automatically forwarded to
+ * `useWsgateStore().addLog()` so the Event Log updates in real time.
+ *
+ * @example
+ * const { status, connect, disconnect, emit } = useSocketStore()
+ */
+export const useSocketStore = create<SocketState>((set, get) => ({
+  // ── Initial state ──────────────────────────────────
+
+  status: "disconnected",
+  _socket: null,
+
+  // ── Connect ───────────────────────────────────────────
+
+  connect: (url, token) => {
+    // Disconnect any existing connection first
+    get()._socket?.disconnect();
+
+    set({ status: "connecting" });
+
+    const socket = io(url, {
+      auth: token ? { token } : {},
+      transports: ["websocket"],
+    });
+
+    socket.on("connect", () => set({ status: "connected" }));
+    socket.on("disconnect", () => set({ status: "disconnected" }));
+    socket.on("connect_error", () => set({ status: "error" }));
+
+    // ── Forward ALL incoming server events to the event log ──
+    socket.onAny((event: string, data: unknown) => {
+      useWsgateStore.getState().addLog("in", event, data);
+    });
+
+    set({ _socket: socket });
+  },
+
+  // ── Disconnect ────────────────────────────────────────
+
+  disconnect: () => {
+    get()._socket?.disconnect();
+    set({ _socket: null, status: "disconnected" });
+  },
+
+  // ── Emit ──────────────────────────────────────────────
+
+  emit: (event, payload) => {
+    get()._socket?.emit(event, payload);
+  },
+}));

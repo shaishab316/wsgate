@@ -7,17 +7,16 @@
  * @packageDocumentation
  */
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useSocket, type SocketStatus } from "@/hooks/useSocket";
 import { useWsgateStore } from "@/store/wsgate.store";
+import { useSocketStore } from "@/hooks/useSocket";
+import type { SocketStatus } from "@/hooks/useSocket";
 
 // ── Status config ─────────────────────────────────────
 
 /**
  * Visual configuration for each connection status.
- * Maps a `SocketStatus` to a Tailwind className and display label.
  */
 const STATUS_CONFIG: Record<
   SocketStatus,
@@ -46,33 +45,15 @@ const STATUS_CONFIG: Record<
 /**
  * Top navigation bar for the nestjs-wsgate UI.
  *
- * Provides controls for:
- * - Entering the Socket.IO server URL
- * - Entering an optional Bearer token for authenticated connections
- * - Connecting and disconnecting from the server
- * - Displaying the real-time connection status
- *
- * The server URL is pre-populated from the `?url=` query parameter
- * injected by the NestJS server at render time.
- *
- * @example
- * // Served by NestJS with query params pre-filled:
- * // http://localhost:3000/wsgate?url=http://localhost:3000
+ * Reads URL and token from `useWsgateStore`.
+ * Reads connection status and controls from `useSocketStore`.
+ * Zero props needed.
  */
 export default function Navbar() {
-  // ── State ────────────────────────────────────────────
+  // ── Stores ────────────────────────────────────────────
 
-  /**
-   * URL and token are read and written directly from the Zustand store.
-   * No local state needed — persisted automatically to localStorage.
-   */
   const { url, token, setUrl, setToken } = useWsgateStore();
-
-  const { addLog } = useWsgateStore();
-
-  const { status, connect, disconnect } = useSocket({
-    onEvent: (event, data) => addLog("in", event, data),
-  });
+  const { status, connect, disconnect } = useSocketStore();
 
   const isConnected = status === "connected";
   const isConnecting = status === "connecting";
@@ -118,7 +99,7 @@ export default function Navbar() {
       {/* Connect / Disconnect button */}
       {isConnected ? (
         <Button
-          onClick={() => disconnect()}
+          onClick={disconnect}
           size="sm"
           className="bg-red-600 hover:bg-red-500 text-white shrink-0"
         >
