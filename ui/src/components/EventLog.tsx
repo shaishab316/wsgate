@@ -78,6 +78,28 @@ const LOG_EDITOR_OPTIONS = {
 };
 
 /**
+ * Global scrollbar styles for the log container.
+ * Applied via inline style injection for webkit browsers.
+ */
+const SCROLLBAR_STYLES = `
+  .event-log-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  .event-log-scroll::-webkit-scrollbar-track {
+    background: rgba(39, 39, 42, 0.5);
+    border-radius: 4px;
+  }
+  .event-log-scroll::-webkit-scrollbar-thumb {
+    background: rgba(113, 119, 144, 0.6);
+    border-radius: 4px;
+    border: 2px solid rgba(39, 39, 42, 0.5);
+  }
+  .event-log-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(113, 119, 144, 0.8);
+  }
+`;
+
+/**
  * Direction filter config — icon, label, and active style per option.
  */
 const DIRECTION_CONFIG = {
@@ -133,29 +155,42 @@ function EmptyState({ hasFilter }: { hasFilter: boolean }) {
 // ─────────────────────────────────────────────────────
 
 /**
- * Single log entry row with expandable payload viewer.
+ * Single log entry row with expandable payload viewer and acknowledgment.
  *
  * @param log       - The log entry to render.
  * @param isExpanded - Whether the payload is currently expanded.
+ * @param isAckExpanded - Whether the ack payload is expanded.
  * @param isCopied  - Whether the payload was just copied.
  * @param onToggle  - Toggles the expanded state.
+ * @param onToggleAck - Toggles the ack expanded state.
  * @param onCopy    - Copies the payload to clipboard.
+ * @param onCopyAck - Copies the ack payload to clipboard.
+ * @param isCopiedAck - Whether the ack was just copied.
  */
 function LogEntry({
   log,
   isExpanded,
+  isAckExpanded,
   isCopied,
   onToggle,
+  onToggleAck,
   onCopy,
+  onCopyAck,
+  isCopiedAck,
 }: {
   log: Log;
   isExpanded: boolean;
+  isAckExpanded: boolean;
   isCopied: boolean;
+  isCopiedAck: boolean;
   onToggle: () => void;
+  onToggleAck: () => void;
   onCopy: () => void;
+  onCopyAck: () => void;
 }) {
   const isOut = log.direction === "out";
   const hasData = log.data !== undefined && log.data !== null;
+  const hasAck = log.ack !== undefined;
 
   return (
     <div
@@ -163,10 +198,10 @@ function LogEntry({
         isOut
           ? isExpanded
             ? "border-blue-500/40 bg-blue-500/5 shadow-[0_0_0_1px_rgba(59,130,246,0.08)]"
-            : "border-blue-500/20 bg-blue-500/[0.03] hover:border-blue-500/35 hover:bg-blue-500/5"
+            : "border-blue-500/20 bg-blue-500/3 hover:border-blue-500/35 hover:bg-blue-500/5"
           : isExpanded
             ? "border-emerald-500/40 bg-emerald-500/5 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]"
-            : "border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/35 hover:bg-emerald-500/5"
+            : "border-emerald-500/20 bg-emerald-500/3 hover:border-emerald-500/35 hover:bg-emerald-500/5"
       }`}
     >
       {/* ── Log row ── */}
@@ -197,6 +232,32 @@ function LogEntry({
         >
           {log.event}
         </span>
+
+        {/* Ack badge */}
+        {hasAck && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleAck();
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-semibold transition-all duration-150 text-[9px] shrink-0 ${
+              isAckExpanded
+                ? "border-purple-500/50 text-purple-200 bg-purple-500/20 shadow-[0_0_0_1px_rgba(168,85,247,0.1)]"
+                : "border-purple-500/30 text-purple-600 bg-purple-500/5 hover:border-purple-500/45 hover:text-purple-500 hover:bg-purple-500/12 active:border-purple-500/50 active:bg-purple-500/15"
+            }`}
+            title="Click to view acknowledgment"
+          >
+            <Check className="w-3 h-3 shrink-0" />
+            <span>ACK</span>
+            <span className="shrink-0 transition-transform duration-150">
+              {isAckExpanded ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+            </span>
+          </button>
+        )}
 
         {/* Timestamp */}
         <span className="text-[10px] text-zinc-600 font-mono shrink-0">
@@ -262,6 +323,56 @@ function LogEntry({
           />
         </div>
       )}
+
+      {/* ── Expanded ack ── */}
+      {isAckExpanded && hasAck && (
+        <div className="border-t border-white/5 bg-purple-500/2">
+          {/* Ack toolbar */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-black/20">
+            <div className="flex items-center gap-2">
+              <Check className="w-3 h-3 text-purple-400" />
+              <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">
+                Acknowledgment
+              </span>
+              <span className="text-[9px] text-zinc-700 font-mono">
+                {log.ack!.timestamp}
+              </span>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCopyAck();
+              }}
+              className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border transition-all duration-150 ${
+                isCopiedAck
+                  ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/5"
+                  : "border-zinc-700 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"
+              }`}
+            >
+              {isCopiedAck ? (
+                <>
+                  <Check className="w-2.5 h-2.5" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="w-2.5 h-2.5" />
+                  Copy
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Monaco JSON viewer for ack */}
+          <Editor
+            height={getEditorHeight(log.ack!.data)}
+            defaultLanguage="json"
+            value={JSON.stringify(log.ack!.data, null, 2)}
+            theme="vs-dark"
+            options={LOG_EDITOR_OPTIONS}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -295,11 +406,26 @@ export default function EventLog() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [expandedAck, setExpandedAck] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState<number | null>(null);
+  const [copiedAck, setCopiedAck] = useState<number | null>(null);
   const [filterInput, setFilterInput] = useState("");
   const [filter, setFilter] = useState("");
   const [direction, setDirection] = useState<DirectionFilter>("all");
   const [searchFocus, setSearchFocus] = useState(false);
+
+  // ── Styles ───────────────────────────────────────────
+
+  /**
+   * Injects scrollbar styles into the document.
+   * Runs once on mount.
+   */
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = SCROLLBAR_STYLES;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
 
   // ── Filtering ─────────────────────────────────────────
 
@@ -368,6 +494,19 @@ export default function EventLog() {
   }
 
   /**
+   * Toggles the expanded state of a log entry acknowledgment.
+   *
+   * @param id - The log entry ID to toggle.
+   */
+  function toggleExpandAck(id: number) {
+    setExpandedAck((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  /**
    * Copies the payload of a log entry to the clipboard.
    * Shows a brief confirmation on the button.
    *
@@ -378,6 +517,19 @@ export default function EventLog() {
     navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     setCopied(id);
     setTimeout(() => setCopied(null), 1500);
+  }
+
+  /**
+   * Copies the acknowledgment of a log entry to the clipboard.
+   * Shows a brief confirmation on the button.
+   *
+   * @param id   - The log entry ID.
+   * @param data - The ack payload to copy.
+   */
+  function copyAckPayload(id: number, data: unknown) {
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    setCopiedAck(id);
+    setTimeout(() => setCopiedAck(null), 1500);
   }
 
   // ── Derived ───────────────────────────────────────────
@@ -514,7 +666,7 @@ export default function EventLog() {
       </div>
 
       {/* ── Log entries ── */}
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5 min-h-0">
+      <div className="event-log-scroll flex-1 overflow-y-auto p-3 flex flex-col gap-1.5 min-h-0 scroll-smooth [scrollbar-width:thin] [scrollbar-color:rgba(113,119,144,0.5)_rgba(39,39,42,0.5)]">
         {filteredLogs.length === 0 ? (
           <EmptyState hasFilter={hasFilter} />
         ) : (
@@ -523,9 +675,13 @@ export default function EventLog() {
               key={log.id}
               log={log}
               isExpanded={expanded.has(log.id)}
+              isAckExpanded={expandedAck.has(log.id)}
               isCopied={copied === log.id}
+              isCopiedAck={copiedAck === log.id}
               onToggle={() => toggleExpand(log.id)}
+              onToggleAck={() => toggleExpandAck(log.id)}
               onCopy={() => copyPayload(log.id, log.data)}
+              onCopyAck={() => copyAckPayload(log.id, log.ack?.data)}
             />
           ))
         )}

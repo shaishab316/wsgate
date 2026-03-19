@@ -32,4 +32,10 @@ export interface LogEntry {
 
   /** The payload data associated with this event. */
   data: unknown;
+
+  /** Optional acknowledgment data received from the server. */
+  ack?: {
+    timestamp: string;
+    data: unknown;
+  };
 }

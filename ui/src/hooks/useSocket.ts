@@ -56,11 +56,17 @@ interface SocketState {
 
   /**
    * Emits a Socket.IO event to the server with the given payload.
+   * Optionally accepts a callback function to handle acknowledgments.
    *
-   * @param event   - The event name to emit.
-   * @param payload - The data to send with the event.
+   * @param event    - The event name to emit.
+   * @param payload  - The data to send with the event.
+   * @param callback - Optional callback function for acknowledgment handling.
    */
-  emit: (event: string, payload: unknown) => void;
+  emit: (
+    event: string,
+    payload: unknown,
+    callback?: (data: unknown) => void,
+  ) => void;
 }
 
 // ── Store ─────────────────────────────────────────────
@@ -123,7 +129,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   // ── Emit ──────────────────────────────────────────────
 
-  emit: (event, payload) => {
-    get()._socket?.emit(event, payload);
+  emit: (event, payload, callback) => {
+    if (callback) {
+      get()._socket?.emit(event, payload, callback);
+    } else {
+      get()._socket?.emit(event, payload);
+    }
   },
 }));

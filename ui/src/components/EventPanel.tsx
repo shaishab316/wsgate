@@ -450,7 +450,7 @@ function CopyButton({ text }: { text: string }) {
 export default function EventPanel() {
   // ── Stores ────────────────────────────────────────────
 
-  const { selectedEvent, addLog, url, token, selectedNamespace } =
+  const { selectedEvent, addLog, addAck, url, token, selectedNamespace } =
     useWsgateStore();
   const { emit, status, disconnect } = useSocketStore();
   const connected = status === "connected";
@@ -581,8 +581,13 @@ export default function EventPanel() {
     try {
       const parsed = JSON.parse(payload);
       setError(null);
-      emit(selectedEvent.event, parsed);
-      addLog("out", selectedEvent.event, parsed);
+      const logId = addLog("out", selectedEvent.event, parsed);
+
+      // Emit with acknowledgment handling via callback
+      emit(selectedEvent.event, parsed, (ackData: unknown) => {
+        addAck(logId, ackData);
+      });
+
       setEmitSuccess(true);
       setTimeout(() => setEmitSuccess(false), 1500);
     } catch {

@@ -21,7 +21,8 @@ interface WsgateState {
   setSelectedEvent: (event: WsEvent | null) => void;
   setSelectedNamespace: (namespace: string) => void;
   setAvailableNamespaces: (namespaces: string[]) => void;
-  addLog: (direction: "in" | "out", event: string, data: unknown) => void;
+  addLog: (direction: "in" | "out", event: string, data: unknown) => number;
+  addAck: (logId: number, data: unknown) => void;
   clearLogs: () => void;
 }
 
@@ -80,6 +81,23 @@ export const useWsgateStore = create<WsgateState>()(
               data,
             },
           ],
+        }));
+        return id;
+      },
+
+      addAck: (logId, data) => {
+        set((s) => ({
+          logs: s.logs.map((log) =>
+            log.id === logId
+              ? {
+                  ...log,
+                  ack: {
+                    timestamp: new Date().toLocaleTimeString(),
+                    data,
+                  },
+                }
+              : log,
+          ),
         }));
       },
 
