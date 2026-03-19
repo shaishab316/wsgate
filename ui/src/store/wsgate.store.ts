@@ -28,6 +28,8 @@ interface WsgateState {
  */
 export type SelectedEvent = NonNullable<WsgateState["selectedEvent"]>;
 
+export type Log = WsgateState["logs"][number];
+
 export const useWsgateStore = create<WsgateState>()(
   persist(
     (set, get) => ({

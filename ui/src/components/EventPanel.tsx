@@ -609,7 +609,7 @@ export default function EventPanel() {
         </div>
         <div className="flex items-center gap-1.5 text-xs text-zinc-700">
           <ArrowDownLeft className="w-3.5 h-3.5 rotate-45" />
-          <span>← from the sidebar</span>
+          <span>from the sidebar</span>
         </div>
       </div>
     );
