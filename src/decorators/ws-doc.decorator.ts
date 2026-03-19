@@ -1,8 +1,25 @@
+/**
+ * nestjs-wsgate
+ *
+ * Copyright (c) 2026 Shaishab Chandra Shil (@shaishab316)
+ * MIT License — https://opensource.org/licenses/MIT
+ *
+ * @packageDocumentation
+ */
+
 import { SetMetadata } from "@nestjs/common";
 
-//? A unique key for storing WebSocket event documentation metadata on handler methods.
-//! Don't change this!
+// ── Metadata Key ──────────────────────────────────────
+
+/**
+ * A unique metadata key for storing WebSocket event documentation
+ * on handler methods via `@WsDoc()`.
+ *
+ * @internal Do not change — this key is used internally by `WsgateExplorer`.
+ */
 export const WSGATE_EVENT_METADATA = "wsgate:event_doc";
+
+// ── Types ─────────────────────────────────────────────
 
 /**
  * Options for the `@WsDoc()` decorator.
@@ -18,6 +35,10 @@ export interface WsDocOptions {
   /**
    * The expected payload shape for this event.
    * Keys are field names, values are their types (e.g. `{ roomId: 'string' }`).
+   *
+   * Supports:
+   * - Primitives: `'string'`, `'number'`, `'boolean'`
+   * - Enums: `'info | warn | error'` (pipe-separated)
    */
   payload?: Record<string, string>;
 
@@ -25,31 +46,40 @@ export interface WsDocOptions {
   response?: string;
 
   /**
-   * The authentication strategy required for this event.
-   * - `bearer` — requires a JWT Bearer token
-   * - `basic`  — requires Basic auth credentials
-   * - `none`   — no authentication required (default)
+   * Whether this event is emitted by the client or received from the server.
+   * - `emit`      — client sends this event to the server (default)
+   * - `subscribe` — server sends this event to the client
+   *
+   * @default 'emit'
    */
-  auth?: "bearer" | "basic" | "none";
+  type?: "emit" | "subscribe";
 }
 
+// ── Decorator ─────────────────────────────────────────
+
 /**
- * Decorator that marks a WebSocket gateway method as a documented event.
- * Metadata is collected at bootstrap and served via the nestjs-wsgate UI.
+ * Marks a WebSocket gateway method as a documented event.
+ * Metadata is collected at bootstrap by `WsgateExplorer` and
+ * served via the nestjs-wsgate interactive UI.
+ *
+ * @param options - Event documentation options. See {@link WsDocOptions}.
  *
  * @example
+ * ```ts
  * @WsDoc({
  *   event: 'sendMessage',
  *   description: 'Send a message to a room',
- *   payload: { roomId: 'string', message: 'string', sender: 'string' },
+ *   payload: { roomId: 'string', message: 'string' },
  *   response: 'receiveMessage',
- *   auth: 'bearer',
+ *   type: 'emit',
  * })
  * @SubscribeMessage('sendMessage')
  * handleMessage(@MessageBody() dto: SendMessageDto) {}
+ * ```
  */
 export const WsDoc = (options: WsDocOptions): MethodDecorator => {
-  options.auth ??= "none";
+  // Apply defaults
+  options.type ??= "emit";
 
   return SetMetadata(WSGATE_EVENT_METADATA, options);
 };

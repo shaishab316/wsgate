@@ -1,44 +1,100 @@
+/**
+ * nestjs-wsgate
+ *
+ * Copyright (c) 2026 Shaishab Chandra Shil (@shaishab316)
+ * MIT License — https://opensource.org/licenses/MIT
+ *
+ * @packageDocumentation
+ */
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
 import type { SocketStatus } from "@/hooks/useSocket";
 
+// ── Types ─────────────────────────────────────────────
+
 interface Props {
+  /** Current Socket.IO connection status. */
   status: SocketStatus;
+
+  /**
+   * Called when the user clicks Connect.
+   *
+   * @param url   - The server URL entered by the user.
+   * @param token - The optional Bearer token entered by the user.
+   */
   onConnect: (url: string, token: string) => void;
+
+  /** Called when the user clicks Disconnect. */
   onDisconnect: () => void;
 }
 
-const statusConfig: Record<SocketStatus, { className: string; label: string }> =
-  {
-    disconnected: {
-      className: "border-zinc-600 text-zinc-500",
-      label: "○ Disconnected",
-    },
-    connecting: {
-      className: "border-yellow-500 text-yellow-400 animate-pulse",
-      label: "◌ Connecting...",
-    },
-    connected: {
-      className: "border-green-500 text-green-400",
-      label: "● Connected",
-    },
-    error: {
-      className: "border-red-500 text-red-400",
-      label: "✕ Connection Error",
-    },
-  };
+// ── Status config ─────────────────────────────────────
 
+/**
+ * Visual configuration for each connection status.
+ * Maps a `SocketStatus` to a Tailwind className and display label.
+ */
+const STATUS_CONFIG: Record<
+  SocketStatus,
+  { className: string; label: string }
+> = {
+  disconnected: {
+    className: "border-zinc-600 text-zinc-500",
+    label: "○ Disconnected",
+  },
+  connecting: {
+    className: "border-yellow-500 text-yellow-400 animate-pulse",
+    label: "◌ Connecting...",
+  },
+  connected: {
+    className: "border-green-500 text-green-400",
+    label: "● Connected",
+  },
+  error: {
+    className: "border-red-500 text-red-400",
+    label: "✕ Connection Error",
+  },
+};
+
+// ── Component ─────────────────────────────────────────
+
+/**
+ * Top navigation bar for the nestjs-wsgate UI.
+ *
+ * Provides controls for:
+ * - Entering the Socket.IO server URL
+ * - Entering an optional Bearer token for authenticated connections
+ * - Connecting and disconnecting from the server
+ * - Displaying the real-time connection status
+ *
+ * The server URL is pre-populated from the `?url=` query parameter
+ * injected by the NestJS server at render time.
+ *
+ * @example
+ * // Served by NestJS with query params pre-filled:
+ * // http://localhost:3000/wsgate?url=http://localhost:3000
+ */
 export default function Navbar({ status, onConnect, onDisconnect }: Props) {
+  // ── State ────────────────────────────────────────────
+
+  /**
+   * Pre-populate URL from `?url=` query param injected by NestJS,
+   * falling back to localhost if not present.
+   */
   const [url, setUrl] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("url") ?? "http://localhost:3000";
   });
+
   const [token, setToken] = useState("");
 
   const isConnected = status === "connected";
   const isConnecting = status === "connecting";
-  const config = statusConfig[status];
+  const config = STATUS_CONFIG[status];
+
+  // ── Render ───────────────────────────────────────────
 
   return (
     <div className="flex items-center gap-2 px-4 h-14 border-b border-zinc-800 bg-zinc-950 shrink-0">
@@ -50,7 +106,7 @@ export default function Navbar({ status, onConnect, onDisconnect }: Props) {
         <span className="text-sm font-semibold text-zinc-100">wsgate</span>
       </div>
 
-      {/* URL input */}
+      {/* Server URL input */}
       <div className="flex items-center flex-1 bg-zinc-900 border border-zinc-700 rounded-md px-3 h-9 gap-2 focus-within:border-zinc-500 transition-colors">
         <span className="text-xs text-zinc-600 font-mono shrink-0">URL</span>
         <input
@@ -62,7 +118,7 @@ export default function Navbar({ status, onConnect, onDisconnect }: Props) {
         />
       </div>
 
-      {/* Token input */}
+      {/* Bearer token input */}
       <div className="flex items-center w-56 bg-zinc-900 border border-zinc-700 rounded-md px-3 h-9 gap-2 focus-within:border-zinc-500 transition-colors">
         <span className="text-xs text-zinc-600 font-mono shrink-0">Token</span>
         <input
@@ -95,7 +151,7 @@ export default function Navbar({ status, onConnect, onDisconnect }: Props) {
         </Button>
       )}
 
-      {/* Status badge */}
+      {/* Real-time connection status badge */}
       <Badge
         variant="outline"
         className={`shrink-0 text-xs ${config.className}`}

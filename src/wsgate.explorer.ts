@@ -8,6 +8,8 @@ import {
 /**
  * Represents the full metadata of a discovered WebSocket event,
  * extended with the handler and gateway class names for UI rendering.
+ *
+ * Inherits all fields from `WsDocOptions` including `type`.
  */
 export interface WsEventMeta extends WsDocOptions {
   /** The name of the method that handles this event (e.g. `handleMessage`). */

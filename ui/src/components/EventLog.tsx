@@ -1,29 +1,96 @@
-// src/components/EventLog.tsx
+/**
+ * nestjs-wsgate
+ *
+ * Copyright (c) 2026 Shaishab Chandra Shil (@shaishab316)
+ * MIT License — https://opensource.org/licenses/MIT
+ *
+ * @packageDocumentation
+ */
+
 import { useRef, useEffect, useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import Editor from "@monaco-editor/react";
 import type { LogEntry } from "@/types/log";
 
+// ── Types ─────────────────────────────────────────────
+
 interface Props {
+  /** All log entries to display. */
   logs: LogEntry[];
+
+  /** Called when the user clicks the Clear button. */
   onClear: () => void;
 }
 
+/**
+ * Direction filter options for the event log.
+ * - `all`  — show all events
+ * - `out`  — show only client → server events (↑)
+ * - `in`   — show only server → client events (↓)
+ */
+type DirectionFilter = "all" | "in" | "out";
+
+// ── Helpers ───────────────────────────────────────────
+
+/**
+ * Calculates the Monaco editor height for a given log payload.
+ * Caps at 200px to keep the log compact.
+ *
+ * @param data - The payload to measure.
+ * @returns A CSS height string (e.g. `'120px'`).
+ */
+function getEditorHeight(data: unknown): string {
+  try {
+    const lines = JSON.stringify(data, null, 2).split("\n").length;
+    return `${Math.min(lines * 18 + 24, 200)}px`;
+  } catch {
+    return "80px";
+  }
+}
+
+// ── Component ─────────────────────────────────────────
+
+/**
+ * Right panel for the nestjs-wsgate UI.
+ *
+ * Displays a live, scrollable log of all Socket.IO events — both
+ * emitted by the client (↑) and received from the server (↓).
+ *
+ * Features:
+ * - Direction filter toggle (All / ↑ Out / ↓ In)
+ * - Regex-based event name filter with Apply button
+ * - Expandable payload per log entry with Monaco JSON highlighting
+ * - Copy payload to clipboard
+ * - Auto-scroll to latest entry when no filter is active
+ * - Filtered count badge (e.g. `3/12`)
+ */
 export default function EventLog({ logs, onClear }: Props) {
+  // ── State ────────────────────────────────────────────
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [copied, setCopied] = useState<number | null>(null);
   const [filterInput, setFilterInput] = useState("");
   const [filter, setFilter] = useState("");
-  const [direction, setDirection] = useState<"all" | "in" | "out">("all");
+  const [direction, setDirection] = useState<DirectionFilter>("all");
 
+  // ── Filtering ─────────────────────────────────────────
+
+  /**
+   * Applies both the direction filter and the regex event name filter
+   * to produce the final list of visible log entries.
+   *
+   * Computed with `useMemo` to avoid re-running on every render.
+   */
   const { filteredLogs, regexError } = useMemo(() => {
     let result = logs;
 
+    // Direction filter
     if (direction !== "all") {
       result = result.filter((log) => log.direction === direction);
     }
 
+    // Regex filter
     if (!filter) return { filteredLogs: result, regexError: false };
 
     try {
@@ -37,21 +104,36 @@ export default function EventLog({ logs, onClear }: Props) {
     }
   }, [filter, logs, direction]);
 
+  // ── Auto-scroll ───────────────────────────────────────
+
+  /**
+   * Scrolls to the bottom of the log whenever new entries arrive,
+   * but only when no filter is active (to avoid jumping during filtering).
+   */
   useEffect(() => {
     if (!filter && direction === "all") {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [logs, filter, direction]);
 
+  // ── Handlers ──────────────────────────────────────────
+
+  /** Applies the current filter input as the active regex filter. */
   function applyFilter() {
     setFilter(filterInput);
   }
 
+  /** Clears both the filter input and the active filter. */
   function clearFilter() {
     setFilterInput("");
     setFilter("");
   }
 
+  /**
+   * Toggles the expanded state of a log entry payload.
+   *
+   * @param id - The log entry ID to toggle.
+   */
   function toggleExpand(id: number) {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -60,24 +142,24 @@ export default function EventLog({ logs, onClear }: Props) {
     });
   }
 
+  /**
+   * Copies the payload of a log entry to the clipboard.
+   * Shows a brief `✓ copied` confirmation on the button.
+   *
+   * @param id   - The log entry ID.
+   * @param data - The payload to copy.
+   */
   function copyPayload(id: number, data: unknown) {
     navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     setCopied(id);
     setTimeout(() => setCopied(null), 1500);
   }
 
-  function getEditorHeight(data: unknown): string {
-    try {
-      const lines = JSON.stringify(data, null, 2).split("\n").length;
-      return `${Math.min(lines * 18 + 24, 200)}px`;
-    } catch {
-      return "80px";
-    }
-  }
+  // ── Render ───────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header — title, count badge, direction toggle, clear */}
       <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-zinc-100">Event Log</h2>
@@ -90,8 +172,9 @@ export default function EventLog({ logs, onClear }: Props) {
             </Badge>
           )}
         </div>
+
         <div className="flex items-center gap-2">
-          {/* Direction toggle */}
+          {/* Direction filter toggle — All / ↑ Out / ↓ In */}
           <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-700 rounded-md p-0.5">
             {(["all", "out", "in"] as const).map((d) => (
               <button
@@ -108,7 +191,7 @@ export default function EventLog({ logs, onClear }: Props) {
             ))}
           </div>
 
-          {/* Clear */}
+          {/* Clear button */}
           {logs.length > 0 && (
             <button
               onClick={onClear}
@@ -120,7 +203,7 @@ export default function EventLog({ logs, onClear }: Props) {
         </div>
       </div>
 
-      {/* Filter input */}
+      {/* Regex filter input */}
       <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
         <div className="flex gap-2">
           <div
@@ -161,8 +244,9 @@ export default function EventLog({ logs, onClear }: Props) {
         )}
       </div>
 
-      {/* Logs */}
+      {/* Log entries */}
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+        {/* Empty state */}
         {filteredLogs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
@@ -189,7 +273,7 @@ export default function EventLog({ logs, onClear }: Props) {
                     : "border-green-500/30 bg-green-500/5"
                 }`}
               >
-                {/* Log header row */}
+                {/* Log row — direction, event name, timestamp, expand toggle */}
                 <div
                   className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors"
                   onClick={() => toggleExpand(log.id)}
@@ -214,7 +298,7 @@ export default function EventLog({ logs, onClear }: Props) {
                   )}
                 </div>
 
-                {/* Expanded payload */}
+                {/* Expanded payload — Monaco JSON viewer */}
                 {isExpanded && hasData && (
                   <div className="border-t border-white/5">
                     <div className="flex items-center justify-between px-3 py-1.5 bg-black/20">
@@ -255,6 +339,7 @@ export default function EventLog({ logs, onClear }: Props) {
           })
         )}
 
+        {/* Scroll anchor */}
         <div ref={bottomRef} />
       </div>
     </div>
