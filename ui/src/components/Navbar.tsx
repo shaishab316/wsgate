@@ -7,16 +7,19 @@
  * @packageDocumentation
  */
 
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useWsgateStore } from "@/store/wsgate.store";
 import { useSocketStore } from "@/hooks/useSocket";
+import { debounce } from "@/utils/debounce";
 import type { SocketStatus } from "@/hooks/useSocket";
 
 // ── Status config ─────────────────────────────────────
 
 /**
  * Visual configuration for each connection status.
+ * Maps a `SocketStatus` to a Tailwind className and display label.
  */
 const STATUS_CONFIG: Record<
   SocketStatus,
@@ -47,7 +50,12 @@ const STATUS_CONFIG: Record<
  *
  * Reads URL and token from `useWsgateStore`.
  * Reads connection status and controls from `useSocketStore`.
- * Zero props needed.
+ *
+ * URL input uses a local `useState` for instant visual feedback,
+ * while the Zustand store is updated via a debounced callback
+ * (500ms after the user stops typing) to avoid excessive writes.
+ *
+ * Zero props — fully store-driven.
  */
 export default function Navbar() {
   // ── Stores ────────────────────────────────────────────
@@ -55,9 +63,43 @@ export default function Navbar() {
   const { url, token, setUrl, setToken } = useWsgateStore();
   const { status, connect, disconnect } = useSocketStore();
 
+  // ── Local state ───────────────────────────────────────
+
+  /**
+   * Local URL input state — updates instantly on every keystroke
+   * for smooth controlled input behavior.
+   */
+  const [urlInput, setUrlInput] = useState(url);
+
+  // ── Debounced store update ────────────────────────────
+
+  /**
+   * Debounced version of `setUrl` — only writes to the Zustand store
+   * (and therefore localStorage) 500ms after the user stops typing.
+   * Wrapped in `useRef` to prevent recreation on every render.
+   */
+  const debouncedSetUrl = useRef(
+    debounce((value: string) => setUrl(value), 500),
+  ).current;
+
+  // ── Derived ───────────────────────────────────────────
+
   const isConnected = status === "connected";
   const isConnecting = status === "connecting";
   const config = STATUS_CONFIG[status];
+
+  // ── Handlers ──────────────────────────────────────────
+
+  /**
+   * Handles URL input changes.
+   * Updates local state instantly and debounces the store write.
+   *
+   * @param e - The input change event.
+   */
+  function handleUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setUrlInput(e.target.value);
+    debouncedSetUrl(e.target.value);
+  }
 
   // ── Render ───────────────────────────────────────────
 
@@ -71,12 +113,12 @@ export default function Navbar() {
         <span className="text-sm font-semibold text-zinc-100">wsgate</span>
       </div>
 
-      {/* Server URL input */}
+      {/* Server URL input — local state + debounced store update */}
       <div className="flex items-center flex-1 bg-zinc-900 border border-zinc-700 rounded-md px-3 h-9 gap-2 focus-within:border-zinc-500 transition-colors">
         <span className="text-xs text-zinc-600 font-mono shrink-0">URL</span>
         <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
+          value={urlInput}
+          onChange={handleUrlChange}
           disabled={isConnected || isConnecting}
           placeholder="http://localhost:3000"
           className="flex-1 bg-transparent text-sm font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600 disabled:opacity-50"
