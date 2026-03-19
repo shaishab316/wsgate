@@ -1,6 +1,7 @@
 // src/components/EventLog.tsx
 import { useRef, useEffect, useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import Editor from "@monaco-editor/react";
 import type { LogEntry } from "@/types/log";
 
 interface Props {
@@ -57,6 +58,15 @@ export default function EventLog({ logs, onClear }: Props) {
     setTimeout(() => setCopied(null), 1500);
   }
 
+  function getEditorHeight(data: unknown): string {
+    try {
+      const lines = JSON.stringify(data, null, 2).split("\n").length;
+      return `${Math.min(lines * 18 + 24, 200)}px`;
+    } catch {
+      return "80px";
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -111,7 +121,6 @@ export default function EventLog({ logs, onClear }: Props) {
               </button>
             )}
           </div>
-
           <button
             onClick={applyFilter}
             className="shrink-0 h-8 px-3 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors border border-zinc-700"
@@ -119,7 +128,6 @@ export default function EventLog({ logs, onClear }: Props) {
             Apply
           </button>
         </div>
-
         {regexError && (
           <p className="text-xs text-red-400 mt-1 px-1">Invalid regex</p>
         )}
@@ -188,9 +196,28 @@ export default function EventLog({ logs, onClear }: Props) {
                         {copied === log.id ? "✓ copied" : "copy"}
                       </button>
                     </div>
-                    <pre className="px-3 py-2 text-zinc-300 text-xs overflow-x-auto">
-                      {JSON.stringify(log.data, null, 2)}
-                    </pre>
+                    <Editor
+                      height={getEditorHeight(log.data)}
+                      defaultLanguage="json"
+                      value={JSON.stringify(log.data, null, 2)}
+                      theme="vs-dark"
+                      options={{
+                        readOnly: true,
+                        minimap: { enabled: false },
+                        fontSize: 12,
+                        fontFamily: "JetBrains Mono, Fira Code, monospace",
+                        lineNumbers: "off",
+                        scrollBeyondLastLine: false,
+                        wordWrap: "on",
+                        folding: false,
+                        renderLineHighlight: "none",
+                        overviewRulerLanes: 0,
+                        hideCursorInOverviewRuler: true,
+                        scrollbar: { vertical: "hidden", horizontal: "hidden" },
+                        padding: { top: 8, bottom: 8 },
+                        contextmenu: false,
+                      }}
+                    />
                   </div>
                 )}
               </div>

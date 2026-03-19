@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Editor, { useMonaco } from "@monaco-editor/react";
+import type * as Monaco from "monaco-editor";
 import type { WsEvent } from "@/types/ws-event";
 
 interface Props {
@@ -10,19 +12,76 @@ interface Props {
   onLog: (event: string, data: unknown) => void;
 }
 
+function resolveJsonType(type: string): object {
+  const trimmed = type.trim();
+
+  // enum: "info | warn | error"
+  if (trimmed.includes("|")) {
+    return { enum: trimmed.split("|").map((t) => t.trim()) };
+  }
+
+  // primitives
+  switch (trimmed) {
+    case "number":
+    case "integer":
+      return { type: "number" };
+    case "boolean":
+      return { type: "boolean" };
+    case "string":
+    default:
+      return { type: "string" };
+  }
+}
+
 export default function EventPanel({ event, connected, emit, onLog }: Props) {
   const [payload, setPayload] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const monaco = useMonaco() as typeof Monaco | null;
 
-  // Auto generate payload from event schema
+  // Auto generate payload skeleton from schema
   useEffect(() => {
     if (!event) return;
     const generated = Object.fromEntries(
-      Object.entries(event.payload).map(([key]) => [key, ""]),
+      Object.entries(event.payload).map(([key, type]) => {
+        const t = type.trim();
+        if (t.includes("|")) return [key, t.split("|")[0].trim()];
+        if (t === "number" || t === "integer") return [key, 0];
+        if (t === "boolean") return [key, false];
+        return [key, ""];
+      }),
     );
     setPayload(JSON.stringify(generated, null, 2));
     setError(null);
   }, [event]);
+
+  // Register JSON schema for Monaco validation + autocomplete
+  useEffect(() => {
+    if (!monaco || !event) return;
+
+    const json = (monaco.languages as any).json;
+    if (!json?.jsonDefaults) return;
+
+    json.jsonDefaults.setDiagnosticsOptions({
+      validate: true,
+      schemas: [
+        {
+          uri: `ws://wsgate/event/${event.event}`,
+          fileMatch: ["*"],
+          schema: {
+            type: "object",
+            properties: Object.fromEntries(
+              Object.entries(event.payload).map(([key, type]) => [
+                key,
+                resolveJsonType(type),
+              ]),
+            ),
+            required: Object.keys(event.payload),
+            additionalProperties: false,
+          },
+        },
+      ],
+    });
+  }, [monaco, event]);
 
   function handleEmit() {
     if (!event) return;
@@ -51,7 +110,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
     <div className="flex flex-col h-full p-5 gap-4">
       {/* Event header */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-base font-semibold font-mono text-zinc-100">
             {event.event}
           </h2>
@@ -60,6 +119,12 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
             className="border-blue-500 text-blue-400 text-xs"
           >
             {event.gatewayName}
+          </Badge>
+          <Badge
+            variant="outline"
+            className="border-zinc-600 text-zinc-500 text-xs"
+          >
+            {event.handlerName}
           </Badge>
           {event.auth === "bearer" && (
             <Badge
@@ -74,7 +139,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
       </div>
 
       {/* Payload schema */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <span className="text-xs uppercase tracking-wider text-zinc-500">
           Payload Schema
         </span>
@@ -100,7 +165,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
         </span>
       </div>
 
-      {/* Payload editor */}
+      {/* Monaco Editor */}
       <div className="flex flex-col gap-1 flex-1">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase tracking-wider text-zinc-500">
@@ -108,19 +173,45 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
           </span>
           {error && <span className="text-xs text-red-400">{error}</span>}
         </div>
-        <textarea
-          value={payload}
-          onChange={(e) => {
-            setPayload(e.target.value);
-            setError(null);
-          }}
-          className={`flex-1 bg-zinc-900 border rounded-md p-3 text-sm font-mono text-zinc-100 resize-none focus:outline-none transition-colors ${
-            error
-              ? "border-red-500 focus:border-red-400"
-              : "border-zinc-700 focus:border-zinc-500"
+
+        <div
+          className={`flex-1 rounded-md overflow-hidden border transition-colors ${
+            error ? "border-red-500" : "border-zinc-700"
           }`}
-          spellCheck={false}
-        />
+        >
+          <Editor
+            height="100%"
+            defaultLanguage="json"
+            value={payload}
+            onChange={(val) => {
+              setPayload(val ?? "");
+              setError(null);
+            }}
+            theme="vs-dark"
+            options={{
+              minimap: { enabled: false },
+              fontSize: 13,
+              fontFamily: "JetBrains Mono, Fira Code, monospace",
+              lineNumbers: "off",
+              scrollBeyondLastLine: false,
+              wordWrap: "on",
+              tabSize: 2,
+              formatOnPaste: true,
+              formatOnType: true,
+              autoClosingBrackets: "always",
+              autoClosingQuotes: "always",
+              folding: false,
+              renderLineHighlight: "none",
+              overviewRulerLanes: 0,
+              hideCursorInOverviewRuler: true,
+              scrollbar: {
+                vertical: "hidden",
+                horizontal: "hidden",
+              },
+              padding: { top: 12, bottom: 12 },
+            }}
+          />
+        </div>
       </div>
 
       {/* Emit button */}
