@@ -10,17 +10,9 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import Editor from "@monaco-editor/react";
-import type { LogEntry } from "@/types/log";
+import { useWsgateStore } from "@/store/wsgate.store";
 
 // ── Types ─────────────────────────────────────────────
-
-interface Props {
-  /** All log entries to display. */
-  logs: LogEntry[];
-
-  /** Called when the user clicks the Clear button. */
-  onClear: () => void;
-}
 
 /**
  * Direction filter options for the event log.
@@ -53,6 +45,9 @@ function getEditorHeight(data: unknown): string {
 /**
  * Right panel for the nestjs-wsgate UI.
  *
+ * Reads logs directly from the Zustand store —
+ * no prop drilling required.
+ *
  * Displays a live, scrollable log of all Socket.IO events — both
  * emitted by the client (↑) and received from the server (↓).
  *
@@ -64,7 +59,11 @@ function getEditorHeight(data: unknown): string {
  * - Auto-scroll to latest entry when no filter is active
  * - Filtered count badge (e.g. `3/12`)
  */
-export default function EventLog({ logs, onClear }: Props) {
+export default function EventLog() {
+  // ── Store ─────────────────────────────────────────────
+
+  const { logs, clearLogs } = useWsgateStore();
+
   // ── State ────────────────────────────────────────────
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -108,7 +107,7 @@ export default function EventLog({ logs, onClear }: Props) {
 
   /**
    * Scrolls to the bottom of the log whenever new entries arrive,
-   * but only when no filter is active (to avoid jumping during filtering).
+   * but only when no filter is active.
    */
   useEffect(() => {
     if (!filter && direction === "all") {
@@ -194,7 +193,7 @@ export default function EventLog({ logs, onClear }: Props) {
           {/* Clear button */}
           {logs.length > 0 && (
             <button
-              onClick={onClear}
+              onClick={clearLogs}
               className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
             >
               Clear

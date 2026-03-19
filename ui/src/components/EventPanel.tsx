@@ -11,14 +11,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Editor, { useMonaco } from "@monaco-editor/react";
-import type { WsEvent } from "@/types/ws-event";
+import { useWsgateStore } from "@/store/wsgate.store";
 
 // ── Types ─────────────────────────────────────────────
 
 interface Props {
-  /** The currently selected WebSocket event, or `null` if none selected. */
-  event: WsEvent | null;
-
   /** Whether the Socket.IO connection is currently active. */
   connected: boolean;
 
@@ -29,14 +26,6 @@ interface Props {
    * @param payload - The parsed JSON payload to send.
    */
   emit: (event: string, payload: unknown) => void;
-
-  /**
-   * Logs an emitted event to the event log panel.
-   *
-   * @param event - The event name that was emitted.
-   * @param data  - The payload that was sent.
-   */
-  onLog: (event: string, data: unknown) => void;
 }
 
 // ── Helpers ───────────────────────────────────────────
@@ -123,6 +112,9 @@ const BASE_EDITOR_OPTIONS = {
 /**
  * Center panel for the nestjs-wsgate UI.
  *
+ * Reads the selected event directly from the Zustand store —
+ * no prop drilling required.
+ *
  * Renders one of two views depending on the selected event type:
  *
  * **emit** — Client → Server
@@ -134,7 +126,11 @@ const BASE_EDITOR_OPTIONS = {
  * - Read-only Monaco JSON preview of the expected response shape
  * - Info note directing users to watch the Event Log
  */
-export default function EventPanel({ event, connected, emit, onLog }: Props) {
+export default function EventPanel({ connected, emit }: Props) {
+  // ── Store ─────────────────────────────────────────────
+
+  const { selectedEvent, addLog } = useWsgateStore();
+
   // ── State ────────────────────────────────────────────
 
   const [payload, setPayload] = useState("");
@@ -148,11 +144,11 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
    * with a skeleton JSON object derived from the event's payload schema.
    */
   useEffect(() => {
-    if (!event) return;
-    const skeleton = buildPayloadSkeleton(event.payload ?? {});
+    if (!selectedEvent) return;
+    const skeleton = buildPayloadSkeleton(selectedEvent.payload ?? {});
     setPayload(JSON.stringify(skeleton, null, 2));
     setError(null);
-  }, [event]);
+  }, [selectedEvent]);
 
   // ── Monaco JSON schema registration ──────────────────
 
@@ -164,10 +160,10 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
    * Only applied for `emit` events — subscribe events are read-only.
    */
   useEffect(() => {
-    if (!monaco || !event || event.type !== "emit") return;
+    if (!monaco || !selectedEvent || selectedEvent.type !== "emit") return;
 
     const properties = Object.fromEntries(
-      Object.entries(event.payload ?? {}).map(([key, type]) => [
+      Object.entries(selectedEvent.payload ?? {}).map(([key, type]) => [
         key,
         resolveJsonType(type),
       ]),
@@ -181,33 +177,33 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
       validate: true,
       schemas: [
         {
-          uri: `ws://wsgate/event/${event.event}`,
+          uri: `ws://wsgate/event/${selectedEvent.event}`,
           fileMatch: ["*"],
           schema: {
             type: "object",
             properties,
-            required: Object.keys(event.payload ?? {}),
+            required: Object.keys(selectedEvent.payload ?? {}),
             additionalProperties: false,
           },
         },
       ],
     });
-  }, [monaco, event]);
+  }, [monaco, selectedEvent]);
 
   // ── Emit handler ──────────────────────────────────────
 
   /**
    * Parses the Monaco editor content as JSON and emits the event.
-   * Logs the emitted event on success.
+   * Logs the emitted event to the store on success.
    * Shows an inline error if the JSON is malformed.
    */
   function handleEmit() {
-    if (!event) return;
+    if (!selectedEvent) return;
     try {
       const parsed = JSON.parse(payload);
       setError(null);
-      emit(event.event, parsed);
-      onLog(event.event, parsed);
+      emit(selectedEvent.event, parsed);
+      addLog("out", selectedEvent.event, parsed);
     } catch {
       setError("Invalid JSON payload");
     }
@@ -215,7 +211,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
 
   // ── Empty state ───────────────────────────────────────
 
-  if (!event) {
+  if (!selectedEvent) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2">
         <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center">
@@ -228,26 +224,26 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
 
   // ── Subscribe view — server → client ──────────────────
 
-  if (event.type === "subscribe") {
+  if (selectedEvent.type === "subscribe") {
     return (
       <div className="flex flex-col h-full p-5 gap-4">
         {/* Event header */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-base font-semibold font-mono text-zinc-100">
-              {event.event}
+              {selectedEvent.event}
             </h2>
             <Badge
               variant="outline"
               className="border-blue-500 text-blue-400 text-xs"
             >
-              {event.gatewayName}
+              {selectedEvent.gatewayName}
             </Badge>
             <Badge
               variant="outline"
               className="border-zinc-600 text-zinc-500 text-xs"
             >
-              {event.handlerName}
+              {selectedEvent.handlerName}
             </Badge>
             <Badge
               variant="outline"
@@ -256,7 +252,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
               subscribe
             </Badge>
           </div>
-          <p className="text-xs text-zinc-500">{event.description}</p>
+          <p className="text-xs text-zinc-500">{selectedEvent.description}</p>
         </div>
 
         {/* Response shape — field names and types */}
@@ -265,7 +261,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
             Response Shape
           </span>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(event.payload ?? {}).map(([key, type]) => (
+            {Object.entries(selectedEvent.payload ?? {}).map(([key, type]) => (
               <span
                 key={key}
                 className="text-xs font-mono bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-zinc-400"
@@ -286,7 +282,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
               height="100%"
               defaultLanguage="json"
               value={JSON.stringify(
-                buildPayloadSkeleton(event.payload ?? {}),
+                buildPayloadSkeleton(selectedEvent.payload ?? {}),
                 null,
                 2,
               )}
@@ -321,19 +317,19 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-base font-semibold font-mono text-zinc-100">
-            {event.event}
+            {selectedEvent.event}
           </h2>
           <Badge
             variant="outline"
             className="border-blue-500 text-blue-400 text-xs"
           >
-            {event.gatewayName}
+            {selectedEvent.gatewayName}
           </Badge>
           <Badge
             variant="outline"
             className="border-zinc-600 text-zinc-500 text-xs"
           >
-            {event.handlerName}
+            {selectedEvent.handlerName}
           </Badge>
           <Badge
             variant="outline"
@@ -342,7 +338,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
             emit
           </Badge>
         </div>
-        <p className="text-xs text-zinc-500">{event.description}</p>
+        <p className="text-xs text-zinc-500">{selectedEvent.description}</p>
       </div>
 
       {/* Payload schema — field names and their types */}
@@ -351,7 +347,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
           Payload Schema
         </span>
         <div className="flex flex-wrap gap-2">
-          {Object.entries(event.payload ?? {}).map(([key, type]) => (
+          {Object.entries(selectedEvent.payload ?? {}).map(([key, type]) => (
             <span
               key={key}
               className="text-xs font-mono bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-zinc-400"
@@ -368,7 +364,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
           Response
         </span>
         <span className="text-xs font-mono text-green-400 bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5">
-          {event.response}
+          {selectedEvent.response}
         </span>
       </div>
 

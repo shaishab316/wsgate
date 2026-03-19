@@ -9,21 +9,8 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { useWsgateStore } from "@/store/wsgate.store";
 import type { WsEvent, WsEventsResponse } from "@/types/ws-event";
-
-// ── Types ─────────────────────────────────────────────
-
-interface Props {
-  /** The currently selected event, or `null` if none is selected. */
-  selected: WsEvent | null;
-
-  /**
-   * Called when the user selects an event from the list.
-   *
-   * @param event - The selected `WsEvent` object.
-   */
-  onSelect: (event: WsEvent) => void;
-}
 
 // ── Badge config ──────────────────────────────────────
 
@@ -46,6 +33,9 @@ const TYPE_CONFIG: Record<"emit" | "subscribe", string> = {
  * `?eventsUrl=` query parameter) and renders them as a
  * selectable list.
  *
+ * Selected event is read and written via Zustand store,
+ * persisted to localStorage automatically.
+ *
  * Each event displays:
  * - The Socket.IO event name
  * - A `type` badge (`emit` or `subscribe`)
@@ -55,9 +45,11 @@ const TYPE_CONFIG: Record<"emit" | "subscribe", string> = {
  * // Events URL can be overridden via query param:
  * // http://localhost:3000/wsgate?eventsUrl=http://localhost:3000/wsgate/events.json
  */
-export default function Sidebar({ selected, onSelect }: Props) {
-  // ── State ────────────────────────────────────────────
+export default function Sidebar() {
+  // ── Store ─────────────────────────────────────────────
+  const { selectedEvent, setSelectedEvent } = useWsgateStore();
 
+  // ── Local state ───────────────────────────────────────
   const [events, setEvents] = useState<WsEvent[]>([]);
   const [title, setTitle] = useState("nestjs-wsgate");
   const [loading, setLoading] = useState(true);
@@ -117,10 +109,11 @@ export default function Sidebar({ selected, onSelect }: Props) {
           !error &&
           events.map((event) => (
             <button
-              key={event.event}
-              onClick={() => onSelect(event)}
+              key={`${event.gatewayName}:${event.event}:${event.type}`}
+              onClick={() => setSelectedEvent(event)}
               className={`w-full text-left px-4 py-2.5 flex flex-col gap-1 hover:bg-zinc-800 transition-colors border-l-2 ${
-                selected?.event === event.event
+                selectedEvent?.event === event.event &&
+                selectedEvent?.type === event.type
                   ? "bg-zinc-800 border-blue-500"
                   : "border-transparent"
               }`}
