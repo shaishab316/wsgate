@@ -5,6 +5,11 @@ import {
   WsDocOptions,
 } from "./decorators/ws-doc.decorator";
 
+// NestJS stores @WebSocketGateway() options under this reflect metadata key.
+// Sourced from @nestjs/websockets/constants → GATEWAY_OPTIONS = 'websockets:gateway_options'.
+// Used to auto-detect the namespace without requiring the user to repeat it in every @WsDoc() call.
+const NESTJS_GATEWAY_OPTIONS_KEY = "websockets:gateway_options";
+
 /**
  * Represents the full metadata of a discovered WebSocket event,
  * extended with the handler and gateway class names for UI rendering.
@@ -17,6 +22,41 @@ export interface WsEventMeta extends WsDocOptions {
 
   /** The name of the gateway class this event belongs to (e.g. `ChatGateway`). */
   gatewayName: string;
+
+  /**
+   * The resolved Socket.IO namespace for this event (e.g. `'/chat'`).
+   *
+   * Resolution order (first match wins):
+   * 1. Explicit `namespace` in `@WsDoc()` options
+   * 2. `namespace` from `@WebSocketGateway({ namespace })` on the class
+   * 3. Default Socket.IO namespace: `'/'`
+   *
+   * Always starts with `'/'`.
+   */
+  namespace: string;
+}
+
+/** @internal Normalises a raw namespace value — ensures it starts with `/`. */
+function normaliseNamespace(raw: string | undefined): string {
+  if (!raw) return "/";
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+/**
+ * @internal
+ * Reads the namespace from a `@WebSocketGateway()` class decorator, if present.
+ * Degrades gracefully to `'/'` if the key is absent or the metadata is unavailable.
+ */
+function resolveGatewayNamespace(constructor: Function): string {
+  try {
+    const opts: { namespace?: string } | undefined = Reflect.getMetadata(
+      NESTJS_GATEWAY_OPTIONS_KEY,
+      constructor,
+    );
+    return normaliseNamespace(opts?.namespace);
+  } catch {
+    return "/";
+  }
 }
 
 /**
@@ -71,6 +111,9 @@ export class WsgateExplorer {
 
       const prototype = Object.getPrototypeOf(instance);
 
+      // Resolve namespace once per class from @WebSocketGateway({ namespace })
+      const classNamespace = resolveGatewayNamespace(instance.constructor);
+
       // Get all method names from the provider's prototype
       const methodNames = this.metadataScanner.getAllMethodNames(prototype);
 
@@ -83,8 +126,11 @@ export class WsgateExplorer {
 
         // Only include methods that have @WsDoc() applied
         if (meta) {
+          // Namespace is always resolved from @WebSocketGateway({ namespace }) on the class.
+          // Fallback: '/' (the default Socket.IO namespace)
           events.push({
             ...meta,
+            namespace: classNamespace,
             handlerName: methodName,
             gatewayName: instance.constructor.name,
           });

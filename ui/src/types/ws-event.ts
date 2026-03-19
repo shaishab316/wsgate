@@ -41,6 +41,14 @@ export interface WsEvent {
 
   /** The name of the gateway class this event belongs to (e.g. `ChatGateway`). */
   gatewayName: string;
+
+  /**
+   * The resolved Socket.IO namespace this event belongs to (e.g. `'/chat'`).
+   *
+   * Always starts with `'/'`. Defaults to `'/'` (the root Socket.IO namespace)
+   * when neither `@WsDoc()` nor `@WebSocketGateway()` specifies one.
+   */
+  namespace: string;
 }
 
 /**
