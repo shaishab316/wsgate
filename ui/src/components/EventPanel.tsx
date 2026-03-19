@@ -12,21 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Editor, { useMonaco } from "@monaco-editor/react";
 import { useWsgateStore } from "@/store/wsgate.store";
-
-// ── Types ─────────────────────────────────────────────
-
-interface Props {
-  /** Whether the Socket.IO connection is currently active. */
-  connected: boolean;
-
-  /**
-   * Emits a Socket.IO event to the server.
-   *
-   * @param event   - The event name to emit.
-   * @param payload - The parsed JSON payload to send.
-   */
-  emit: (event: string, payload: unknown) => void;
-}
+import { useSocket } from "@/hooks/useSocket";
 
 // ── Helpers ───────────────────────────────────────────
 
@@ -126,10 +112,14 @@ const BASE_EDITOR_OPTIONS = {
  * - Read-only Monaco JSON preview of the expected response shape
  * - Info note directing users to watch the Event Log
  */
-export default function EventPanel({ connected, emit }: Props) {
+export default function EventPanel() {
   // ── Store ─────────────────────────────────────────────
 
   const { selectedEvent, addLog } = useWsgateStore();
+
+  const { emit, status } = useSocket({
+    onEvent: (event, data) => addLog("in", event, data),
+  });
 
   // ── State ────────────────────────────────────────────
 
@@ -406,10 +396,10 @@ export default function EventPanel({ connected, emit }: Props) {
       {/* Emit button — disabled until connected */}
       <Button
         onClick={handleEmit}
-        disabled={!connected}
+        disabled={status !== "connected"}
         className="w-full bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {connected ? "Emit Event" : "Connect to emit"}
+        {status === "connected" ? "Emit Event" : "Connect to emit"}
       </Button>
     </div>
   );

@@ -10,25 +10,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { SocketStatus } from "@/hooks/useSocket";
-
-// ── Types ─────────────────────────────────────────────
-
-interface Props {
-  /** Current Socket.IO connection status. */
-  status: SocketStatus;
-
-  /**
-   * Called when the user clicks Connect.
-   *
-   * @param url   - The server URL entered by the user.
-   * @param token - The optional Bearer token entered by the user.
-   */
-  onConnect: (url: string, token: string) => void;
-
-  /** Called when the user clicks Disconnect. */
-  onDisconnect: () => void;
-}
+import { useSocket, type SocketStatus } from "@/hooks/useSocket";
+import { useWsgateStore } from "@/store/wsgate.store";
 
 // ── Status config ─────────────────────────────────────
 
@@ -76,7 +59,7 @@ const STATUS_CONFIG: Record<
  * // Served by NestJS with query params pre-filled:
  * // http://localhost:3000/wsgate?url=http://localhost:3000
  */
-export default function Navbar({ status, onConnect, onDisconnect }: Props) {
+export default function Navbar() {
   // ── State ────────────────────────────────────────────
 
   /**
@@ -86,6 +69,12 @@ export default function Navbar({ status, onConnect, onDisconnect }: Props) {
   const [url, setUrl] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("url") ?? "http://localhost:3000";
+  });
+
+  const { addLog } = useWsgateStore();
+
+  const { status, connect, disconnect } = useSocket({
+    onEvent: (event, data) => addLog("in", event, data),
   });
 
   const [token, setToken] = useState("");
@@ -134,7 +123,7 @@ export default function Navbar({ status, onConnect, onDisconnect }: Props) {
       {/* Connect / Disconnect button */}
       {isConnected ? (
         <Button
-          onClick={onDisconnect}
+          onClick={() => disconnect()}
           size="sm"
           className="bg-red-600 hover:bg-red-500 text-white shrink-0"
         >
@@ -142,7 +131,7 @@ export default function Navbar({ status, onConnect, onDisconnect }: Props) {
         </Button>
       ) : (
         <Button
-          onClick={() => onConnect(url, token)}
+          onClick={() => connect(url, token)}
           disabled={isConnecting || !url}
           size="sm"
           className="bg-blue-600 hover:bg-blue-500 text-white shrink-0 disabled:opacity-50"
