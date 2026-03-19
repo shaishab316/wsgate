@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Radio,
   Send,
@@ -20,6 +20,10 @@ import {
   ChevronRight,
   Server,
   Network,
+  Copy,
+  Check,
+  Sparkles,
+  Keyboard,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useWsgateStore } from "@/store/wsgate.store";
@@ -353,31 +357,32 @@ function ErrorState({
   // ── Render ───────────────────────────────────────────
 
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-8 gap-5 text-center">
+    <div className="flex flex-col items-center justify-center px-4 py-10 gap-6 text-center">
       {/* Icon + pulse ring */}
       <div className="relative">
-        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-          <ServerCrash className="w-7 h-7 text-red-400" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center">
+          <ServerCrash className="w-8 h-8 text-red-400" />
         </div>
-        <div className="absolute inset-0 rounded-2xl border border-red-500/20 animate-ping" />
+        <div className="absolute inset-0 rounded-2xl border border-red-500/20 animate-pulse" />
       </div>
 
       {/* Title + hint */}
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-semibold text-zinc-100">Could not connect</p>
+      <div className="flex flex-col gap-2 max-w-sm">
+        <p className="text-base font-bold text-zinc-100">Connection Failed</p>
         <p className="text-xs text-zinc-500 leading-relaxed">
-          Edit the server URL below and retry.
+          We couldn't reach your NestJS server. Verify the URL below and try
+          again.
         </p>
       </div>
 
       {/* Editable server URL — does NOT affect socket connection */}
-      <div className="w-full flex flex-col gap-1.5">
-        <label className="text-[10px] text-zinc-600 uppercase tracking-widest text-left px-1">
+      <div className="w-full max-w-sm flex flex-col gap-2">
+        <label className="text-[10px] text-zinc-600 uppercase tracking-widest text-left px-1 font-semibold">
           Server URL
         </label>
 
         <div
-          className={`flex items-center gap-2 w-full bg-zinc-900 border rounded-lg px-3 h-9 transition-all duration-200 ${
+          className={`flex items-center gap-2 w-full bg-zinc-900 border rounded-lg px-3 h-10 transition-all duration-200 ${
             focused
               ? "border-blue-500/60 shadow-[0_0_0_3px_rgba(59,130,246,0.08)]"
               : isDirty
@@ -405,7 +410,7 @@ function ErrorState({
             <button
               onClick={handleReset}
               title="Reset to original"
-              className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
+              className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-zinc-800/50 rounded"
             >
               <X className="w-3 h-3" />
             </button>
@@ -414,7 +419,10 @@ function ErrorState({
       </div>
 
       {/* Quick checklist — helps user self-diagnose */}
-      <div className="w-full bg-zinc-900/60 border border-zinc-800 rounded-lg px-3 py-2.5 flex flex-col gap-1.5 text-left">
+      <div className="w-full max-w-sm bg-gradient-to-br from-zinc-900/60 to-zinc-900/30 border border-zinc-800/60 rounded-lg px-4 py-3 flex flex-col gap-2">
+        <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 mb-1">
+          Troubleshooting
+        </p>
         {[
           {
             icon: <Zap className="w-3 h-3" />,
@@ -429,9 +437,13 @@ function ErrorState({
             text: "Port & URL are correct",
           },
         ].map(({ icon, text }) => (
-          <div key={text} className="flex items-center gap-2">
-            <span className="text-zinc-600 shrink-0">{icon}</span>
-            <span className="text-[11px] text-zinc-500">{text}</span>
+          <div key={text} className="flex items-center gap-2 group">
+            <span className="text-zinc-600 group-hover:text-zinc-400 shrink-0 transition-colors">
+              {icon}
+            </span>
+            <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 transition-colors">
+              {text}
+            </span>
           </div>
         ))}
       </div>
@@ -440,15 +452,13 @@ function ErrorState({
       <button
         onClick={handleRetry}
         disabled={retrying}
-        className={`w-full flex items-center justify-center gap-2 text-xs font-medium rounded-lg px-4 py-2.5 border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`w-full max-w-sm flex items-center justify-center gap-2 text-xs font-semibold rounded-lg px-4 py-3 border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
           isDirty
-            ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/30"
+            ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50"
             : "bg-zinc-900 hover:bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-zinc-100"
         }`}
       >
-        <RefreshCw
-          className={`w-3.5 h-3.5 ${retrying ? "animate-spin" : ""}`}
-        />
+        <RefreshCw className={`w-4 h-4 ${retrying ? "animate-spin" : ""}`} />
         {retrying ? "Retrying..." : isDirty ? "Save & Retry" : "Retry"}
       </button>
     </div>
@@ -460,34 +470,29 @@ function ErrorState({
 /**
  * Shown when events load successfully but none match the search query.
  *
- * @param query   - The current search string.
  * @param onClear - Clears the search input.
  */
-function EmptySearch({
-  query,
-  onClear,
-}: {
-  query: string;
-  onClear: () => void;
-}) {
+function EmptySearch({ onClear }: { onClear: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center px-5 py-10 gap-3 text-center">
-      <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-        <Search className="w-4 h-4 text-zinc-600" />
+    <div className="flex flex-col items-center justify-center px-5 py-12 gap-4 text-center">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-zinc-800 flex items-center justify-center">
+        <Search className="w-5 h-5 text-zinc-600" />
       </div>
-      <div className="flex flex-col gap-1">
-        <p className="text-xs font-medium text-zinc-400">No results</p>
-        <p className="text-xs text-zinc-600">
-          No events match{" "}
-          <span className="font-mono text-zinc-500">"{query}"</span>
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-semibold text-zinc-300">No results found</p>
+        <p className="text-xs text-zinc-500 leading-relaxed">
+          Try searching for different keywords or{" "}
+          <button
+            onClick={onClear}
+            className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+          >
+            clear your search
+          </button>
         </p>
       </div>
-      <button
-        onClick={onClear}
-        className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors underline underline-offset-2"
-      >
-        Clear search
-      </button>
+      <div className="text-[10px] text-zinc-600 pt-2">
+        <p>📝 Tip: Search by event name or description</p>
+      </div>
     </div>
   );
 }
@@ -575,7 +580,7 @@ function GatewayHeader({
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center gap-2 px-3 py-1.5 mt-2 ml-2 group"
+      className="w-full flex items-center gap-2 px-3 py-1.5 mt-2 ml-0 group"
     >
       <Layers className="w-3 h-3 text-zinc-600 shrink-0" />
       <span className="flex-1 text-left text-[10px] font-semibold text-zinc-500 uppercase tracking-widest truncate">
@@ -615,6 +620,14 @@ function EventRow({
   onSelect: () => void;
 }) {
   const typeConf = TYPE_CONFIG[event.type];
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(event.event);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <button
@@ -656,6 +669,23 @@ function EventRow({
         >
           {event.event}
         </span>
+
+        {/* Copy button */}
+        <button
+          onClick={handleCopy}
+          title="Copy event name"
+          className={`shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 ${
+            copied
+              ? "bg-emerald-500/20 text-emerald-400"
+              : "hover:bg-zinc-800 text-zinc-600 hover:text-zinc-300"
+          }`}
+        >
+          {copied ? (
+            <Check className="w-3 h-3" />
+          ) : (
+            <Copy className="w-3 h-3" />
+          )}
+        </button>
 
         {/* Type badge */}
         <Badge
@@ -723,6 +753,32 @@ export default function Sidebar() {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [activeNamespace, setActiveNamespace] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showKeyboardHint, setShowKeyboardHint] = useState(true);
+
+  // ── Keyboard shortcuts ────────────────────────────────
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K (or Cmd+K) to focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setShowKeyboardHint(false);
+      }
+      // Escape to clear search when focused
+      if (
+        e.key === "Escape" &&
+        search &&
+        document.activeElement === searchInputRef.current
+      ) {
+        setSearch("");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [search]);
 
   // ── Fetch events ──────────────────────────────────────
 
@@ -824,13 +880,19 @@ export default function Sidebar() {
       <div className="px-4 py-3 border-b border-zinc-800 shrink-0">
         <div className="flex items-center gap-2">
           {/* Logo mark */}
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20">
             <Zap className="w-3.5 h-3.5 text-white fill-white" />
           </div>
 
           <div className="flex flex-col leading-none flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-zinc-100 truncate">
+            <h1 className="text-sm font-bold text-zinc-100 truncate flex items-center gap-2">
               {title}
+              {!loading && !error && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-500/80 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Ready
+                </span>
+              )}
             </h1>
             <p className="text-[10px] text-zinc-600 mt-0.5">
               Socket.IO Explorer
@@ -841,7 +903,7 @@ export default function Sidebar() {
           {events.length > 0 && (
             <Badge
               variant="outline"
-              className="shrink-0 border-zinc-700 text-zinc-500 text-[10px] h-5 px-1.5"
+              className="shrink-0 border-zinc-700 text-zinc-500 text-[10px] h-5 px-1.5 bg-zinc-900/50"
             >
               {events.length}
             </Badge>
@@ -852,27 +914,52 @@ export default function Sidebar() {
       {/* ── Search input — only shown when events are loaded ── */}
       {!loading && !error && events.length > 0 && (
         <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
-          <div
-            className={`flex items-center gap-2 h-8 bg-zinc-900 border rounded-lg px-3 transition-all duration-200 ${
-              search
-                ? "border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]"
-                : "border-zinc-800 hover:border-zinc-700"
-            }`}
-          >
-            <Search className="w-3 h-3 text-zinc-600 shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search events..."
-              className="flex-1 min-w-0 bg-transparent text-xs font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
+          <div className="flex flex-col gap-1.5">
+            <div
+              className={`flex items-center gap-2 h-8 bg-zinc-900 border rounded-lg px-3 transition-all duration-200 ${
+                search
+                  ? "border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]"
+                  : "border-zinc-800 hover:border-zinc-700"
+              }`}
+            >
+              <Search className="w-3 h-3 text-zinc-600 shrink-0" />
+              <input
+                ref={searchInputRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search events..."
+                className="flex-1 min-w-0 bg-transparent text-xs font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600"
+              />
+              {search && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+            {/* Keyboard hint */}
+            {showKeyboardHint && events.length > 0 && (
+              <div className="flex items-center justify-between px-2 py-1 text-[9px] text-zinc-600">
+                <div className="flex items-center gap-1">
+                  <Keyboard className="w-3 h-3" />
+                  <span>Press</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[8px]">
+                    Ctrl+K
+                  </kbd>
+                  <span>to search</span>
+                </div>
+                <button
+                  onClick={() => setShowKeyboardHint(false)}
+                  className="hover:text-zinc-400 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -903,7 +990,25 @@ export default function Sidebar() {
 
         {/* Empty search result */}
         {!loading && !error && filtered.length === 0 && search && (
-          <EmptySearch query={search} onClear={() => setSearch("")} />
+          <EmptySearch onClear={() => setSearch("")} />
+        )}
+
+        {/* No events loaded yet */}
+        {!loading && !error && events.length === 0 && (
+          <div className="flex flex-col items-center justify-center px-5 py-12 gap-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-zinc-800 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-blue-400" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-zinc-300">
+                No events discovered
+              </p>
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Make sure your NestJS server is running and WsgateModule is
+                imported
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Grouped event list — by namespace then gateway */}
@@ -932,7 +1037,7 @@ export default function Sidebar() {
 
                   {/* Gateways in this namespace */}
                   {nsExpanded && (
-                    <div className="border-l border-zinc-800/40 ml-5 pl-3">
+                    <div className="border-l border-zinc-800/40 ml-0 pl-3">
                       {Object.entries(gwInNs).map(([gatewayName, gwEvents]) => {
                         const gwKey = `gw:${ns}:${gatewayName}`;
                         const gwCollapsed = collapsed.has(gwKey);
@@ -979,14 +1084,14 @@ export default function Sidebar() {
 
       {/* ── Footer — emit / subscribe legend + active namespace ── */}
       {!loading && !error && events.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-zinc-800 shrink-0 flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
+        <div className="px-4 py-2.5 border-t border-zinc-800 shrink-0 flex items-center gap-4 bg-zinc-950/50 backdrop-blur-sm">
+          <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
             <Send className="w-2.5 h-2.5 text-blue-400" />
             <span className="text-[10px] text-zinc-600">
               {events.filter((e) => e.type === "emit").length} emit
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
             <Radio className="w-2.5 h-2.5 text-emerald-400" />
             <span className="text-[10px] text-zinc-600">
               {events.filter((e) => e.type === "subscribe").length} subscribe
@@ -999,7 +1104,7 @@ export default function Sidebar() {
               <button
                 onClick={() => setActiveNamespace(null)}
                 title="Clear namespace filter"
-                className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors group"
+                className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors group px-2 py-1 rounded hover:bg-zinc-800/50"
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 ${
