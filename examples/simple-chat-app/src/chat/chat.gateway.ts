@@ -23,7 +23,7 @@ import { WsDoc } from 'nestjs-wsgate';
  */
 @WebSocketGateway({
   cors: { origin: '*' },
-  namespace: '/',
+  namespace: '/chat',
 })
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
