@@ -7,7 +7,7 @@ interface Props {
   event: WsEvent | null;
   connected: boolean;
   emit: (event: string, payload: unknown) => void;
-  onLog: (msg: string) => void;
+  onLog: (event: string, data: unknown) => void;
 }
 
 export default function EventPanel({ event, connected, emit, onLog }: Props) {
@@ -30,10 +30,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
       const parsed = JSON.parse(payload);
       setError(null);
       emit(event.event, parsed);
-      const timestamp = new Date().toLocaleTimeString();
-      onLog(
-        `[${timestamp}] → ${event.event}\n${JSON.stringify(parsed, null, 2)}`,
-      );
+      onLog(event.event, parsed);
     } catch {
       setError("Invalid JSON payload");
     }

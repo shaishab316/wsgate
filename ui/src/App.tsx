@@ -1,23 +1,33 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import EventPanel from "./components/EventPanel";
 import EventLog from "./components/EventLog";
 import { useSocket } from "./hooks/useSocket";
 import type { WsEvent } from "./types/ws-event";
+import type { LogEntry } from "./types/log";
 
 export default function App() {
-  const { status, connect, disconnect, emit } = useSocket({
-    onEvent: (event, data) => {
-      const timestamp = new Date().toLocaleTimeString();
-      setLogs((p) => [
-        ...p,
-        `[${timestamp}] ← ${event}\n${JSON.stringify(data, null, 2)}`,
-      ]);
-    },
-  });
   const [selectedEvent, setSelectedEvent] = useState<WsEvent | null>(null);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const logIdRef = useRef(0);
+
+  function addLog(direction: "in" | "out", event: string, data: unknown) {
+    setLogs((p) => [
+      ...p,
+      {
+        id: logIdRef.current++,
+        timestamp: new Date().toLocaleTimeString(),
+        direction,
+        event,
+        data,
+      },
+    ]);
+  }
+
+  const { status, connect, disconnect, emit } = useSocket({
+    onEvent: (event, data) => addLog("in", event, data),
+  });
 
   const connected = status === "connected";
 
@@ -33,14 +43,14 @@ export default function App() {
         <main className="flex-1 border-r border-zinc-800 overflow-y-auto">
           <EventPanel
             event={selectedEvent}
-            onLog={(msg) => setLogs((p) => [...p, msg])}
+            onLog={(event, data) => addLog("out", event, data)}
             emit={emit}
             connected={connected}
           />
         </main>
 
         <aside className="w-80">
-          <EventLog logs={logs} />
+          <EventLog logs={logs} onClear={() => setLogs([])} />
         </aside>
       </div>
     </div>

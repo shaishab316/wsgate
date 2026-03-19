@@ -1,57 +1,205 @@
-import { useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+// src/components/EventLog.tsx
+import { useRef, useEffect, useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import type { LogEntry } from "@/types/log";
 
 interface Props {
-  logs: string[];
+  logs: LogEntry[];
+  onClear: () => void;
 }
 
-export default function EventLog({ logs }: Props) {
+export default function EventLog({ logs, onClear }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [copied, setCopied] = useState<number | null>(null);
+  const [filterInput, setFilterInput] = useState("");
+  const [filter, setFilter] = useState("");
 
-  // Auto scroll to bottom on new log
+  const { filteredLogs, regexError } = useMemo(() => {
+    if (!filter) return { filteredLogs: logs, regexError: false };
+    try {
+      const regex = new RegExp(filter, "i");
+      return {
+        filteredLogs: logs.filter((log) => regex.test(log.event)),
+        regexError: false,
+      };
+    } catch {
+      return { filteredLogs: logs, regexError: true };
+    }
+  }, [filter, logs]);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
+    if (!filter) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, filter]);
+
+  function applyFilter() {
+    setFilter(filterInput);
+  }
+
+  function clearFilter() {
+    setFilterInput("");
+    setFilter("");
+  }
+
+  function toggleExpand(id: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function copyPayload(id: number, data: unknown) {
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    setCopied(id);
+    setTimeout(() => setCopied(null), 1500);
+  }
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-zinc-100">Event Log</h2>
-        <span className="text-xs text-zinc-500">{logs.length} events</span>
+      <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-zinc-100">Event Log</h2>
+          {logs.length > 0 && (
+            <Badge
+              variant="outline"
+              className="text-xs border-zinc-600 text-zinc-500"
+            >
+              {filteredLogs.length}/{logs.length}
+            </Badge>
+          )}
+        </div>
+        {logs.length > 0 && (
+          <button
+            onClick={onClear}
+            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Filter input */}
+      <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
+        <div className="flex gap-2">
+          <div
+            className={`flex items-center gap-2 bg-zinc-900 border rounded-md px-3 h-8 flex-1 transition-colors ${
+              regexError
+                ? "border-red-500"
+                : filter
+                  ? "border-zinc-500"
+                  : "border-zinc-700"
+            }`}
+          >
+            <span className="text-zinc-600 text-xs font-mono shrink-0">.*</span>
+            <input
+              value={filterInput}
+              onChange={(e) => setFilterInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyFilter()}
+              placeholder="filter by event name"
+              className="flex-1 bg-transparent text-xs font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600"
+            />
+            {filterInput && (
+              <button
+                onClick={clearFilter}
+                className="text-zinc-600 hover:text-zinc-400 text-xs shrink-0"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={applyFilter}
+            className="shrink-0 h-8 px-3 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors border border-zinc-700"
+          >
+            Apply
+          </button>
+        </div>
+
+        {regexError && (
+          <p className="text-xs text-red-400 mt-1 px-1">Invalid regex</p>
+        )}
       </div>
 
       {/* Logs */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-        {logs.length === 0 ? (
-          <p className="text-xs text-zinc-600 text-center mt-4">
-            No events yet
-          </p>
-        ) : (
-          logs.map((log, i) => (
-            <div
-              key={i}
-              className="text-xs font-mono bg-zinc-900 border border-zinc-800 rounded p-2 text-zinc-300 whitespace-pre-wrap break-all"
-            >
-              {log}
+      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+        {filteredLogs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-2">
+            <div className="w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
+              <span className="text-zinc-700 text-xs">○</span>
             </div>
-          ))
+            <p className="text-xs text-zinc-600">
+              {filter ? "No matching events" : "No events yet"}
+            </p>
+          </div>
+        ) : (
+          filteredLogs.map((log) => {
+            const isOut = log.direction === "out";
+            const isExpanded = expanded.has(log.id);
+            const hasData = log.data !== undefined && log.data !== null;
+
+            return (
+              <div
+                key={log.id}
+                className={`rounded-md border text-xs font-mono overflow-hidden transition-all ${
+                  isOut
+                    ? "border-blue-500/30 bg-blue-500/5"
+                    : "border-green-500/30 bg-green-500/5"
+                }`}
+              >
+                {/* Log header row */}
+                <div
+                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => toggleExpand(log.id)}
+                >
+                  <span
+                    className={`shrink-0 font-bold ${isOut ? "text-blue-400" : "text-green-400"}`}
+                  >
+                    {isOut ? "↑" : "↓"}
+                  </span>
+                  <span
+                    className={`flex-1 truncate ${isOut ? "text-blue-300" : "text-green-300"}`}
+                  >
+                    {log.event}
+                  </span>
+                  <span className="text-zinc-600 shrink-0">
+                    {log.timestamp}
+                  </span>
+                  {hasData && (
+                    <span className="text-zinc-600 shrink-0">
+                      {isExpanded ? "▲" : "▼"}
+                    </span>
+                  )}
+                </div>
+
+                {/* Expanded payload */}
+                {isExpanded && hasData && (
+                  <div className="border-t border-white/5">
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-black/20">
+                      <span className="text-zinc-600 text-xs">payload</span>
+                      <button
+                        onClick={() => copyPayload(log.id, log.data)}
+                        className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors"
+                      >
+                        {copied === log.id ? "✓ copied" : "copy"}
+                      </button>
+                    </div>
+                    <pre className="px-3 py-2 text-zinc-300 text-xs overflow-x-auto">
+                      {JSON.stringify(log.data, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
+
         <div ref={bottomRef} />
       </div>
-
-      {/* Clear button */}
-      {logs.length > 0 && (
-        <div className="p-3 border-t border-zinc-800">
-          <Button
-            variant="outline"
-            className="w-full text-xs text-zinc-400 border-zinc-700 hover:bg-zinc-800"
-            onClick={() => window.location.reload()}
-          >
-            Clear Log
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
