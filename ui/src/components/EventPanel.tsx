@@ -45,11 +45,11 @@ interface Props {
  * Converts a `@WsDoc()` payload type string into a JSON Schema definition.
  * Handles primitive types and pipe-separated enums.
  *
- * @param type - The type string from `WsDocOptions.payload` (e.g. `'string'`, `'info | warn | error'`).
- * @returns A JSON Schema-compatible object for use in Monaco diagnostics.
+ * @param type - The type string from `WsDocOptions.payload`
+ * @returns A JSON Schema-compatible object for Monaco diagnostics.
  *
  * @example
- * resolveJsonType('string')           // → { type: 'string' }
+ * resolveJsonType('string')              // → { type: 'string' }
  * resolveJsonType('info | warn | error') // → { enum: ['info', 'warn', 'error'] }
  */
 function resolveJsonType(type: string): object {
@@ -73,8 +73,8 @@ function resolveJsonType(type: string): object {
 }
 
 /**
- * Generates a default payload skeleton object from a `@WsDoc()` payload schema.
- * Uses sensible default values based on the field type.
+ * Generates a skeleton JSON object from a `@WsDoc()` payload schema.
+ * Uses sensible default values based on each field's type.
  *
  * @param payload - The payload schema from `WsEvent`.
  * @returns A plain object with default values for each field.
@@ -97,19 +97,42 @@ function buildPayloadSkeleton(
   );
 }
 
+// ── Shared editor options ─────────────────────────────
+
+/**
+ * Base Monaco editor options shared between the emit editor
+ * and the subscribe read-only preview.
+ */
+const BASE_EDITOR_OPTIONS = {
+  minimap: { enabled: false },
+  fontSize: 13,
+  fontFamily: "JetBrains Mono, Fira Code, monospace",
+  lineNumbers: "off" as const,
+  scrollBeyondLastLine: false,
+  wordWrap: "on" as const,
+  folding: false,
+  renderLineHighlight: "none" as const,
+  overviewRulerLanes: 0,
+  hideCursorInOverviewRuler: true,
+  scrollbar: { vertical: "hidden" as const, horizontal: "hidden" as const },
+  padding: { top: 12, bottom: 12 },
+};
+
 // ── Component ─────────────────────────────────────────
 
 /**
  * Center panel for the nestjs-wsgate UI.
  *
- * Displays full details of the selected `@WsDoc()` event and provides
- * a Monaco JSON editor for composing the event payload before emitting.
+ * Renders one of two views depending on the selected event type:
  *
- * Features:
- * - Auto-generates a payload skeleton from the event schema on selection
- * - Registers a JSON Schema with Monaco for field validation and autocomplete
- * - Validates JSON before emitting and shows inline error feedback
- * - Shows gateway name, handler name, event type, and response event
+ * **emit** — Client → Server
+ * - Monaco JSON editor with schema validation and autocomplete
+ * - Auto-generated payload skeleton from `@WsDoc()` metadata
+ * - Emit button (disabled until connected)
+ *
+ * **subscribe** — Server → Client
+ * - Read-only Monaco JSON preview of the expected response shape
+ * - Info note directing users to watch the Event Log
  */
 export default function EventPanel({ event, connected, emit, onLog }: Props) {
   // ── State ────────────────────────────────────────────
@@ -121,7 +144,7 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
   // ── Auto-generate payload skeleton ───────────────────
 
   /**
-   * When a new event is selected, automatically populate the Monaco editor
+   * When a new event is selected, populate the Monaco editor
    * with a skeleton JSON object derived from the event's payload schema.
    */
   useEffect(() => {
@@ -135,13 +158,13 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
 
   /**
    * Registers a JSON Schema with Monaco's JSON language service
-   * whenever the selected event changes. This enables:
-   * - Field name autocomplete
-   * - Type validation (string, number, boolean, enum)
-   * - Squiggle errors for unknown or missing fields
+   * when the selected event changes. Enables field autocomplete,
+   * type validation, and squiggle errors for unknown fields.
+   *
+   * Only applied for `emit` events — subscribe events are read-only.
    */
   useEffect(() => {
-    if (!monaco || !event) return;
+    if (!monaco || !event || event.type !== "emit") return;
 
     const properties = Object.fromEntries(
       Object.entries(event.payload ?? {}).map(([key, type]) => [
@@ -174,8 +197,8 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
   // ── Emit handler ──────────────────────────────────────
 
   /**
-   * Parses the current editor content as JSON and emits the event.
-   * Logs the emitted event to the event log panel on success.
+   * Parses the Monaco editor content as JSON and emits the event.
+   * Logs the emitted event on success.
    * Shows an inline error if the JSON is malformed.
    */
   function handleEmit() {
@@ -198,12 +221,99 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
         <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center">
           <span className="text-zinc-600 text-lg">↑</span>
         </div>
-        <p className="text-sm text-zinc-600">Select an event to emit</p>
+        <p className="text-sm text-zinc-600">Select an event to get started</p>
       </div>
     );
   }
 
-  // ── Render ───────────────────────────────────────────
+  // ── Subscribe view — server → client ──────────────────
+
+  if (event.type === "subscribe") {
+    return (
+      <div className="flex flex-col h-full p-5 gap-4">
+        {/* Event header */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-base font-semibold font-mono text-zinc-100">
+              {event.event}
+            </h2>
+            <Badge
+              variant="outline"
+              className="border-blue-500 text-blue-400 text-xs"
+            >
+              {event.gatewayName}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="border-zinc-600 text-zinc-500 text-xs"
+            >
+              {event.handlerName}
+            </Badge>
+            <Badge
+              variant="outline"
+              className="border-green-500 text-green-400 text-xs"
+            >
+              subscribe
+            </Badge>
+          </div>
+          <p className="text-xs text-zinc-500">{event.description}</p>
+        </div>
+
+        {/* Response shape — field names and types */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs uppercase tracking-wider text-zinc-500">
+            Response Shape
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(event.payload ?? {}).map(([key, type]) => (
+              <span
+                key={key}
+                className="text-xs font-mono bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-zinc-400"
+              >
+                {key}: <span className="text-green-400">{type}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Read-only Monaco preview of response shape */}
+        <div className="flex flex-col gap-1 flex-1">
+          <span className="text-xs uppercase tracking-wider text-zinc-500">
+            Example Response
+          </span>
+          <div className="flex-1 rounded-md overflow-hidden border border-zinc-700">
+            <Editor
+              height="100%"
+              defaultLanguage="json"
+              value={JSON.stringify(
+                buildPayloadSkeleton(event.payload ?? {}),
+                null,
+                2,
+              )}
+              theme="vs-dark"
+              options={{
+                ...BASE_EDITOR_OPTIONS,
+                readOnly: true,
+                contextmenu: false,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Info note */}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/5 border border-green-500/20">
+          <span className="text-green-400 text-xs">↓</span>
+          <p className="text-xs text-zinc-500">
+            This event is emitted by the server. Watch the{" "}
+            <span className="text-zinc-300">Event Log</span> for incoming
+            payloads.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Emit view — client → server ───────────────────────
 
   return (
     <div className="flex flex-col h-full p-5 gap-4">
@@ -227,13 +337,9 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
           </Badge>
           <Badge
             variant="outline"
-            className={`text-xs ${
-              event.type === "emit"
-                ? "border-blue-500 text-blue-400"
-                : "border-green-500 text-green-400"
-            }`}
+            className="border-blue-500 text-blue-400 text-xs"
           >
-            {event.type}
+            emit
           </Badge>
         </div>
         <p className="text-xs text-zinc-500">{event.description}</p>
@@ -290,23 +396,12 @@ export default function EventPanel({ event, connected, emit, onLog }: Props) {
             }}
             theme="vs-dark"
             options={{
-              minimap: { enabled: false },
-              fontSize: 13,
-              fontFamily: "JetBrains Mono, Fira Code, monospace",
-              lineNumbers: "off",
-              scrollBeyondLastLine: false,
-              wordWrap: "on",
+              ...BASE_EDITOR_OPTIONS,
               tabSize: 2,
               formatOnPaste: true,
               formatOnType: true,
               autoClosingBrackets: "always",
               autoClosingQuotes: "always",
-              folding: false,
-              renderLineHighlight: "none",
-              overviewRulerLanes: 0,
-              hideCursorInOverviewRuler: true,
-              scrollbar: { vertical: "hidden", horizontal: "hidden" },
-              padding: { top: 12, bottom: 12 },
             }}
           />
         </div>
