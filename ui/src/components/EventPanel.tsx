@@ -29,12 +29,9 @@ import { useSocketStore } from "@/hooks/useSocket";
  */
 function resolveJsonType(type: string): object {
   const trimmed = type.trim();
-
-  // Pipe-separated values → JSON Schema enum
   if (trimmed.includes("|")) {
     return { enum: trimmed.split("|").map((t) => t.trim()) };
   }
-
   switch (trimmed) {
     case "number":
     case "integer":
@@ -93,6 +90,118 @@ const BASE_EDITOR_OPTIONS = {
   padding: { top: 12, bottom: 12 },
 };
 
+// ── Shimmer ───────────────────────────────────────────
+
+/**
+ * Shimmer skeleton shown while the Monaco editor is loading.
+ */
+function EditorShimmer() {
+  return (
+    <div className="flex-1 rounded-md overflow-hidden border border-zinc-700 bg-zinc-900 p-3 flex flex-col gap-2">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-3 rounded bg-zinc-800 animate-pulse"
+          style={{ width: `${30 + (i % 4) * 15}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Shimmer skeleton for the header badges and schema pills
+ * while the event panel is first rendering.
+ */
+function PanelShimmer() {
+  return (
+    <div className="flex flex-col h-full p-5 gap-4">
+      {/* Header shimmer */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-32 rounded bg-zinc-800 animate-pulse" />
+          <div className="h-5 w-20 rounded-full bg-zinc-800 animate-pulse" />
+          <div className="h-5 w-24 rounded-full bg-zinc-800 animate-pulse" />
+        </div>
+        <div className="h-3 w-48 rounded bg-zinc-800/70 animate-pulse" />
+      </div>
+
+      {/* Schema pills shimmer */}
+      <div className="flex flex-col gap-2">
+        <div className="h-2.5 w-24 rounded bg-zinc-800 animate-pulse" />
+        <div className="flex gap-2">
+          {[60, 80, 50].map((w, i) => (
+            <div
+              key={i}
+              className="h-5 rounded bg-zinc-800 animate-pulse"
+              style={{ width: w }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Response shimmer */}
+      <div className="flex items-center gap-2">
+        <div className="h-2.5 w-16 rounded bg-zinc-800 animate-pulse" />
+        <div className="h-5 w-24 rounded bg-zinc-800 animate-pulse" />
+      </div>
+
+      {/* Editor shimmer */}
+      <div className="flex flex-col gap-1 flex-1">
+        <div className="h-2.5 w-20 rounded bg-zinc-800 animate-pulse mb-1" />
+        <EditorShimmer />
+      </div>
+
+      {/* Button shimmer */}
+      <div className="h-9 w-full rounded-md bg-zinc-800 animate-pulse" />
+    </div>
+  );
+}
+
+// ── Emit error ────────────────────────────────────────
+
+/**
+ * Inline error banner shown when the emit fails due to
+ * invalid JSON or other parse errors.
+ *
+ * @param message - The error message to display.
+ * @param onDismiss - Callback to dismiss the error.
+ */
+function EmitError({
+  message,
+  onDismiss,
+}: {
+  message: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-500/5 border border-red-500/20">
+      <div className="shrink-0 w-4 h-4 rounded-full bg-red-500/20 flex items-center justify-center">
+        <svg
+          className="w-2.5 h-2.5 text-red-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </div>
+      <p className="text-xs text-red-400 flex-1">{message}</p>
+      <button
+        onClick={onDismiss}
+        className="text-zinc-600 hover:text-zinc-400 text-xs shrink-0 transition-colors"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────
 
 /**
@@ -124,7 +233,16 @@ export default function EventPanel() {
 
   const [payload, setPayload] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [editorReady, setEditorReady] = useState(false);
   const monaco = useMonaco();
+
+  // ── Reset editor ready on event change ───────────────
+
+  useEffect(() => {
+    setEditorReady(false);
+    const timer = setTimeout(() => setEditorReady(true), 300);
+    return () => clearTimeout(timer);
+  }, [selectedEvent]);
 
   // ── Auto-generate payload skeleton ───────────────────
 
@@ -184,7 +302,7 @@ export default function EventPanel() {
   /**
    * Parses the Monaco editor content as JSON and emits the event.
    * Logs the emitted event to the store on success.
-   * Shows an inline error if the JSON is malformed.
+   * Shows an inline error banner if the JSON is malformed.
    */
   function handleEmit() {
     if (!selectedEvent) return;
@@ -194,7 +312,7 @@ export default function EventPanel() {
       emit(selectedEvent.event, parsed);
       addLog("out", selectedEvent.event, parsed);
     } catch {
-      setError("Invalid JSON payload");
+      setError("Invalid JSON — check your payload syntax");
     }
   }
 
@@ -202,13 +320,24 @@ export default function EventPanel() {
 
   if (!selectedEvent) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2">
+      <div className="flex flex-col items-center justify-center h-full gap-3">
         <div className="w-10 h-10 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center">
           <span className="text-zinc-600 text-lg">↑</span>
         </div>
-        <p className="text-sm text-zinc-600">Select an event to get started</p>
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-sm text-zinc-400 font-medium">No event selected</p>
+          <p className="text-xs text-zinc-600">
+            Pick an event from the sidebar to get started
+          </p>
+        </div>
       </div>
     );
+  }
+
+  // ── Shimmer while editor initializes ─────────────────
+
+  if (!editorReady) {
+    return <PanelShimmer />;
   }
 
   // ── Subscribe view — server → client ──────────────────
@@ -359,16 +488,13 @@ export default function EventPanel() {
 
       {/* Monaco JSON editor */}
       <div className="flex flex-col gap-1 flex-1">
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wider text-zinc-500">
-            Payload (JSON)
-          </span>
-          {error && <span className="text-xs text-red-400">{error}</span>}
-        </div>
+        <span className="text-xs uppercase tracking-wider text-zinc-500">
+          Payload (JSON)
+        </span>
 
         <div
           className={`flex-1 rounded-md overflow-hidden border transition-colors ${
-            error ? "border-red-500" : "border-zinc-700"
+            error ? "border-red-500/50" : "border-zinc-700"
           }`}
         >
           <Editor
@@ -391,6 +517,9 @@ export default function EventPanel() {
           />
         </div>
       </div>
+
+      {/* Emit error banner */}
+      {error && <EmitError message={error} onDismiss={() => setError(null)} />}
 
       {/* Emit button — disabled until connected */}
       <Button
