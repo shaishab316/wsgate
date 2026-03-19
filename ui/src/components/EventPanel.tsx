@@ -28,7 +28,6 @@ import {
   X,
   Code2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Editor, { useMonaco, type OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
@@ -254,9 +253,21 @@ function EmitError({
  */
 function EventHeader({ event }: { event: SelectedEvent }) {
   const isEmit = event.type === "emit";
+  const nsDisplay =
+    event.namespace === "/"
+      ? "Global"
+      : (event.namespace?.slice(1).toUpperCase() ?? "GLOBAL");
 
   return (
-    <div className="flex flex-col gap-2 pb-4 border-b border-zinc-800/80 shrink-0">
+    <div className="flex flex-col gap-3 pb-4 border-b border-zinc-800/80 shrink-0">
+      {/* Namespace tag — top visual indicator */}
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-blue-400" />
+        <span className="text-[9px] font-mono font-semibold text-blue-300 uppercase tracking-widest">
+          {nsDisplay} Namespace
+        </span>
+      </div>
+
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
@@ -299,6 +310,15 @@ function EventHeader({ event }: { event: SelectedEvent }) {
       </div>
 
       <div className="flex items-center gap-2 flex-wrap pl-11">
+        {/* Namespace badge — prominent visual indicator */}
+        <Badge
+          variant="outline"
+          className="text-[10px] border-blue-500/40 text-blue-300 bg-blue-500/10 gap-1.5 font-mono font-semibold"
+        >
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+          {event.namespace ?? "/"}
+        </Badge>
+        <ChevronRight className="w-3 h-3 text-zinc-700" />
         <Badge
           variant="outline"
           className="text-[10px] border-zinc-700 text-zinc-500 gap-1"
@@ -430,8 +450,9 @@ function CopyButton({ text }: { text: string }) {
 export default function EventPanel() {
   // ── Stores ────────────────────────────────────────────
 
-  const { selectedEvent, addLog, url, token } = useWsgateStore();
-  const { emit, status } = useSocketStore();
+  const { selectedEvent, addLog, url, token, selectedNamespace } =
+    useWsgateStore();
+  const { emit, status, disconnect } = useSocketStore();
   const connected = status === "connected";
 
   // ── State ─────────────────────────────────────────────
@@ -471,6 +492,24 @@ export default function EventPanel() {
     const timer = setTimeout(() => setEditorReady(true), 300);
     return () => clearTimeout(timer);
   }, [selectedEvent]);
+
+  // ── Auto-disconnect when event namespace changes ─────
+
+  /**
+   * If the user selects a different event in a different namespace,
+   * automatically disconnect the old socket connection to prevent
+   * message routing conflicts.
+   */
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const eventNamespace = selectedEvent.namespace ?? "/";
+    const connected = status === "connected";
+
+    // If the event's namespace differs from the selected namespace AND socket is connected
+    if (eventNamespace !== selectedNamespace && connected) {
+      disconnect();
+    }
+  }, [selectedEvent, selectedNamespace, status, disconnect]);
 
   // ── Auto-generate payload skeleton ───────────────────
 

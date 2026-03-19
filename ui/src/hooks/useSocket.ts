@@ -33,17 +33,21 @@ interface SocketState {
   /** Current connection status. */
   status: SocketStatus;
 
+  /** Current connected namespace. */
+  namespace: string | null;
+
   /** Internal Socket.IO instance — not exposed to consumers. */
   _socket: Socket | null;
 
   /**
-   * Establishes a Socket.IO connection.
+   * Establishes a Socket.IO connection to a specific namespace.
    * Incoming events are automatically logged to the wsgate store.
    *
-   * @param url   - The server URL to connect to.
-   * @param token - Optional Bearer token for authenticated connections.
+   * @param url       - The server URL to connect to.
+   * @param token     - Optional Bearer token for authenticated connections.
+   * @param namespace - The Socket.IO namespace to connect to (e.g., '/chat', '/admin'). Defaults to '/'.
    */
-  connect: (url: string, token: string) => void;
+  connect: (url: string, token: string, namespace?: string) => void;
 
   /**
    * Disconnects the active Socket.IO connection and resets state.
@@ -77,23 +81,29 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   // ── Initial state ──────────────────────────────────
 
   status: "disconnected",
+  namespace: null,
   _socket: null,
 
   // ── Connect ───────────────────────────────────────────
 
-  connect: (url, token) => {
+  connect: (url, token, namespace = "/") => {
     // Disconnect any existing connection first
     get()._socket?.disconnect();
 
     set({ status: "connecting" });
 
-    const socket = io(url, {
+    // Construct the full URL with namespace
+    const socketUrl = namespace === "/" ? url : `${url}${namespace}`;
+
+    const socket = io(socketUrl, {
       auth: token ? { token } : {},
       transports: ["websocket"],
     });
 
-    socket.on("connect", () => set({ status: "connected" }));
-    socket.on("disconnect", () => set({ status: "disconnected" }));
+    socket.on("connect", () => set({ status: "connected", namespace }));
+    socket.on("disconnect", () =>
+      set({ status: "disconnected", namespace: null }),
+    );
     socket.on("connect_error", () => set({ status: "error" }));
 
     // ── Forward ALL incoming server events to the event log ──
@@ -108,7 +118,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   disconnect: () => {
     get()._socket?.disconnect();
-    set({ _socket: null, status: "disconnected" });
+    set({ _socket: null, status: "disconnected", namespace: null });
   },
 
   // ── Emit ──────────────────────────────────────────────

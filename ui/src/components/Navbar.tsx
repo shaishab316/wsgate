@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import {
   Plug,
@@ -21,6 +21,8 @@ import {
   Wifi,
   WifiOff,
   AlertTriangle,
+  GitBranch,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +73,100 @@ const STATUS_CONFIG: Record<
   },
 };
 
+// ── Namespace picker ──────────────────────────────────
+
+function NamespacePicker({
+  selectedNamespace,
+  availableNamespaces,
+  onSelect,
+  disabled,
+}: {
+  selectedNamespace: string | null;
+  availableNamespaces: string[];
+  onSelect: (ns: string) => void;
+  disabled: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const getDisplayName = (ns: string) => {
+    if (ns === "/") return "Global";
+    return ns.slice(1).charAt(0).toUpperCase() + ns.slice(2);
+  };
+
+  const getColorClass = (ns: string, isActive: boolean) => {
+    const colors: Record<string, { idle: string; active: string }> = {
+      "/": {
+        idle: "border-zinc-700 text-zinc-400 hover:text-zinc-300",
+        active: "border-zinc-500 text-zinc-100 bg-zinc-800",
+      },
+      "/chat": {
+        idle: "border-emerald-500/25 text-emerald-500/80 hover:text-emerald-400",
+        active: "border-emerald-400 text-emerald-300 bg-emerald-500/15",
+      },
+      "/admin": {
+        idle: "border-purple-500/25 text-purple-500/80 hover:text-purple-400",
+        active: "border-purple-400 text-purple-300 bg-purple-500/15",
+      },
+    };
+
+    const colorSet = colors[ns] || {
+      idle: "border-amber-500/25 text-amber-500/80 hover:text-amber-400",
+      active: "border-amber-400 text-amber-300 bg-amber-500/15",
+    };
+
+    return isActive ? colorSet.active : colorSet.idle;
+  };
+
+  if (availableNamespaces.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`flex items-center gap-2 h-9 px-3 rounded-lg border transition-all duration-200 ${
+          disabled
+            ? "border-zinc-800 opacity-50 cursor-not-allowed"
+            : "border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-zinc-100"
+        }`}
+      >
+        <GitBranch className="w-3.5 h-3.5 shrink-0" />
+        <span className="text-xs font-medium">
+          {selectedNamespace
+            ? getDisplayName(selectedNamespace)
+            : "Select Namespace"}
+        </span>
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg shadow-black/50 z-50 overflow-hidden">
+          {availableNamespaces.map((ns) => {
+            const isActive = selectedNamespace === ns;
+            return (
+              <button
+                key={ns}
+                onClick={() => {
+                  onSelect(ns);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-4 py-2.5 flex items-center justify-between text-sm font-medium border-l-2 transition-all duration-150 ${getColorClass(
+                  ns,
+                  isActive,
+                )} hover:bg-zinc-800/50`}
+              >
+                <span>{getDisplayName(ns)}</span>
+                {isActive && <Check className="w-4 h-4 text-emerald-400" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Resize handle ─────────────────────────────────────
 
 function NavResizeHandle() {
@@ -96,7 +192,16 @@ function NavResizeHandle() {
 export default function Navbar() {
   // ── Stores ──────────────────────────────────────────
 
-  const { url, token, setUrl, setToken } = useWsgateStore();
+  const {
+    url,
+    token,
+    setUrl,
+    setToken,
+    selectedEvent,
+    selectedNamespace,
+    setSelectedNamespace,
+    availableNamespaces,
+  } = useWsgateStore();
   const { status, connect, disconnect } = useSocketStore();
 
   // ── Local state ─────────────────────────────────────
@@ -118,6 +223,35 @@ export default function Navbar() {
   const isConnecting = status === "connecting";
   const isDisabled = isConnected || isConnecting;
   const config = STATUS_CONFIG[status];
+
+  // ── Handle namespace change ─────────────────────────
+
+  const handleNamespaceChange = (ns: string) => {
+    setSelectedNamespace(ns);
+    // Disconnect socket if connected when switching namespaces
+    if (isConnected) {
+      disconnect();
+    }
+  };
+
+  // ── Sync selected namespace from event + auto-disconnect ──
+
+  useEffect(() => {
+    if (selectedEvent && selectedEvent.namespace) {
+      const newNamespace = selectedEvent.namespace;
+      // If namespace changed and socket is connected, disconnect old connection
+      if (newNamespace !== selectedNamespace && isConnected) {
+        disconnect();
+      }
+      setSelectedNamespace(newNamespace);
+    }
+  }, [
+    selectedEvent,
+    selectedNamespace,
+    isConnected,
+    setSelectedNamespace,
+    disconnect,
+  ]);
 
   // ── Handlers ────────────────────────────────────────
 
@@ -247,7 +381,7 @@ export default function Navbar() {
         </Button>
       ) : (
         <Button
-          onClick={() => connect(url, token)}
+          onClick={() => connect(url, token, selectedNamespace)}
           disabled={isConnecting || !url}
           size="sm"
           className="shrink-0 h-9 px-4 gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg shadow-lg shadow-blue-900/30 transition-all duration-200 hover:shadow-blue-800/40"
@@ -262,6 +396,14 @@ export default function Navbar() {
           </span>
         </Button>
       )}
+
+      {/* ── Namespace Picker ── */}
+      <NamespacePicker
+        selectedNamespace={selectedNamespace}
+        availableNamespaces={availableNamespaces}
+        onSelect={handleNamespaceChange}
+        disabled={isDisabled}
+      />
 
       {/* ── Status badge ── */}
       <Badge

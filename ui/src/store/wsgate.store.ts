@@ -8,15 +8,19 @@ interface WsgateState {
   url: string;
   token: string;
   selectedEvent: WsEvent | null;
+  selectedNamespace: string;
 
   // ── Volatile ──────────────────────────────────────────
   logs: LogEntry[];
   logId: number;
+  availableNamespaces: string[];
 
   // ── Actions ───────────────────────────────────────────
   setUrl: (url: string) => void;
   setToken: (token: string) => void;
   setSelectedEvent: (event: WsEvent | null) => void;
+  setSelectedNamespace: (namespace: string) => void;
+  setAvailableNamespaces: (namespaces: string[]) => void;
   addLog: (direction: "in" | "out", event: string, data: unknown) => void;
   clearLogs: () => void;
 }
@@ -39,15 +43,28 @@ export const useWsgateStore = create<WsgateState>()(
         "http://localhost:3000",
       token: "",
       selectedEvent: null,
+      selectedNamespace: "/",
 
       // ── Volatile initial state ─────────────────────────
       logs: [],
       logId: 0,
+      availableNamespaces: ["/"],
 
       // ── Actions ────────────────────────────────────────
       setUrl: (url) => set({ url }),
       setToken: (token) => set({ token }),
-      setSelectedEvent: (selectedEvent) => set({ selectedEvent }),
+      setSelectedEvent: (selectedEvent) => {
+        // When selecting an event, also update the namespace
+        if (selectedEvent) {
+          const ns = selectedEvent.namespace ?? "/";
+          set({ selectedEvent, selectedNamespace: ns });
+        } else {
+          set({ selectedEvent });
+        }
+      },
+      setSelectedNamespace: (selectedNamespace) => set({ selectedNamespace }),
+      setAvailableNamespaces: (availableNamespaces) =>
+        set({ availableNamespaces }),
 
       addLog: (direction, event, data) => {
         const id = get().logId;
@@ -76,6 +93,7 @@ export const useWsgateStore = create<WsgateState>()(
         url: state.url,
         token: state.token,
         selectedEvent: state.selectedEvent,
+        selectedNamespace: state.selectedNamespace,
       }),
     },
   ),
