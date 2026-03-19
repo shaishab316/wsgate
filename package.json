@@ -27,7 +27,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build:ui": "cd frontend && pnpm run build",
+    "build": "pnpm run build:ui && tsc",
     "prepublishOnly": "pnpm build"
   },
   "packageManager": "pnpm@10.20.0",
