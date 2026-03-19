@@ -27,8 +27,8 @@
     "dist"
   ],
   "scripts": {
-    "build:ui": "cd frontend && pnpm run build",
-    "build": "pnpm run build:ui && tsc",
+    "build:ui": "cd ui && pnpm run build",
+    "build": "concurrently \"pnpm run build:ui\" \"tsc\"",
     "build:only": "tsc",
     "prepublishOnly": "pnpm build"
   },
@@ -42,7 +42,12 @@
     "@nestjs/common": "^11.1.17",
     "@nestjs/core": "^11.1.17",
     "@types/node": "^25.5.0",
+    "concurrently": "^9.2.1",
+    "express": "^5.2.1",
     "reflect-metadata": "^0.2.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.6"
   }
 }

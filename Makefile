@@ -21,7 +21,7 @@ install: ## Install root dependencies
 	$(NODE_MANAGER) install
 
 # ── Build ─────────────────────────────────────
-build: clean ## Compile TypeScript → dist/
+build: clean ## Build package (ts → dist) and UI (ts, react → static)
 	$(NODE_MANAGER) run build
 
 clean: ## Remove dist/

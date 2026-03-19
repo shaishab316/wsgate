@@ -1,6 +1,7 @@
 import { INestApplication, Module } from "@nestjs/common";
 import { WsgateExplorer } from "./wsgate.explorer";
-import { getUiHtml } from "./templates/ui.template";
+import * as path from "node:path";
+import * as express from "express";
 
 /**
  * Configuration options for the WsgateModule.
@@ -51,13 +52,13 @@ export class WsgateModule {
    *
    * This method performs three things:
    * - Resolves `WsgateExplorer` from the DI container.
-   * - Serves collected `@WsDoc()` event metadata at `{path}/events.json`.
-   * - Serves the interactive HTML UI at `{path}`.
+   * - Serves collected `@WsDoc()` event metadata at `{routePath}/events.json`.
+   * - Serves the interactive HTML UI at `{routePath}`.
    *
-   * @param path    - The route path to mount wsgate (e.g. `'/wsgate'`).
-   * @param app     - The running NestJS application instance.
-   * @param options - Optional configuration. See {@link WsgateOptions}.
-   * @returns       A promise that resolves when setup is complete.
+   * @param routePath - The route path to mount wsgate (e.g. `'/wsgate'`).
+   * @param app       - The running NestJS application instance.
+   * @param options   - Optional configuration. See {@link WsgateOptions}.
+   * @returns         A promise that resolves when setup is complete.
    *
    * @example
    * ```ts
@@ -67,7 +68,7 @@ export class WsgateModule {
    * ```
    */
   static async setup(
-    path: string,
+    routePath: string,
     app: INestApplication,
     options?: WsgateOptions,
   ): Promise<void> {
@@ -87,16 +88,18 @@ export class WsgateModule {
 
     // ── Expose raw event metadata as JSON ─────────────────
     // The UI fetches this endpoint to render event cards dynamically.
-    app.use(`${path}/events.json`, (_req: any, res: any) => {
+    app.use(`${routePath}/events.json`, (_req: any, res: any) => {
       res.json({ title, events });
     });
 
-    // ── Serve the interactive HTML UI ─────────────────────
-    // A self-contained HTML page that connects to the socket server
-    // and allows emitting/receiving events interactively.
-    app.use(path, (_req: any, res: any) => {
-      res.setHeader("Content-Type", "text/html");
-      res.send(getUiHtml(title, path));
+    // ── Serve the interactive HTML UI as static files ────
+    // Serves the entire dist/ui directory with index.html as fallback
+    const uiPath = path.join(__dirname, "ui");
+    app.use(routePath, express.static(uiPath, { index: "index.html" }));
+
+    // Fallback: SPA route redirects to index.html for client-side routing
+    app.use(routePath, (_req: any, res: any) => {
+      res.sendFile(path.join(uiPath, "index.html"));
     });
   }
 }
