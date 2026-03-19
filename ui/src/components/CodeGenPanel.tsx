@@ -7,16 +7,16 @@
  * @packageDocumentation
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Code2,
-  ChevronDown,
-  ChevronUp,
   Copy,
   Check,
   Terminal,
   Star,
   StarOff,
+  X,
+  Braces,
 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { Badge } from "@/components/ui/badge";
@@ -45,22 +45,22 @@ export type CodeLang =
 interface CodeLangConfig {
   label: string;
   monacoId: string;
-  /** Short badge label shown on the tab and collapsed badge. */
   badge: string;
-  /** Tailwind classes for the active tab state. */
   color: string;
-  /** Hex color used for the brand dot indicator. */
   dot: string;
 }
 
 // ── Props ─────────────────────────────────────────────
 
 /**
- * Props for the CodeGenPanel component.
- * Exported so consumers can reference the type if needed.
+ * Props for the CodeGenPanel modal component.
  */
 export interface CodeGenPanelProps {
-  /** Currently selected WsEvent — used for the event name. */
+  /** Whether the modal is open. */
+  open: boolean;
+  /** Called to close the modal. */
+  onClose: () => void;
+  /** Currently selected WsEvent. */
   event: SelectedEvent;
   /** Socket.IO server URL from store. */
   url: string;
@@ -183,28 +183,32 @@ const INSTALL_HINT: Record<CodeLang, string> = {
 // ── Editor options ────────────────────────────────────
 
 /**
- * Read-only Monaco editor options used for all generated snippets.
+ * Read-only Monaco editor options — compact, code-focused.
+ * Small font, tight padding, no decorations — maximises code visibility.
  */
 const CODEGEN_EDITOR_OPTIONS = {
   minimap: { enabled: false },
   fontSize: 12,
+  lineHeight: 18,
   fontFamily: "JetBrains Mono, Fira Code, monospace",
   lineNumbers: "on" as const,
   scrollBeyondLastLine: false,
   wordWrap: "on" as const,
-  folding: true,
-  renderLineHighlight: "line" as const,
+  folding: false,
+  renderLineHighlight: "none" as const,
   overviewRulerLanes: 0,
   hideCursorInOverviewRuler: true,
   scrollbar: {
     vertical: "auto" as const,
     horizontal: "hidden" as const,
-    verticalScrollbarSize: 6,
+    verticalScrollbarSize: 4,
   },
-  padding: { top: 12, bottom: 12 },
-  readOnly: true,
+  padding: { top: 8, bottom: 8 },
+  readOnly: false,
   contextmenu: false,
   glyphMargin: false,
+  lineDecorationsWidth: 10,
+  lineNumbersMinChars: 3,
 };
 
 // ── Helpers ───────────────────────────────────────────
@@ -272,7 +276,6 @@ print(f"✓ connected: {sio.sid}")
 
 sio.emit("${event}", ${payload})
 
-# Listen for response
 event_name, data = sio.receive()
 print(f"← {event_name}:", data)
 
@@ -301,7 +304,6 @@ func main() {
 
   fmt.Println("✓ connected")
   c.Emit("${event}", ${payload})
-
   select {}
 }`;
 
@@ -405,28 +407,24 @@ void main() {
 }`;
 
     case "wscat":
-      return `# ── Install ──────────────────────────────
+      return `# Install
 npm install -g wscat
 
-# ── Connect ──────────────────────────────${token ? `\n# Token: pass via query param or custom header` : ""}
+# Connect${token ? `\n# Token: pass via query param or custom header` : ""}
 wscat -c "${url.replace("http", "ws")}"
 
-# ── Once connected, paste this frame ─────
+# Paste this frame once connected:
 42["${event}",${payload}]
 
-# ── Tip: Socket.IO frame format ──────────
-# 4  = Engine.IO message
-# 2  = Socket.IO event
-# ["<eventName>", <payload>]`;
+# Socket.IO frame format:
+# 4 = Engine.IO message, 2 = Socket.IO event`;
   }
 }
 
 // ── Sub-components ────────────────────────────────────
 
 /**
- * Small brand-color dot rendered in each language tab.
- *
- * @param color - Hex color string matching the language brand.
+ * Brand-color dot for language tabs.
  */
 function LangDot({ color }: { color: string }) {
   return (
@@ -437,96 +435,23 @@ function LangDot({ color }: { color: string }) {
   );
 }
 
-// ─────────────────────────────────────────────────────
-
-/**
- * Horizontally scrollable language tab strip.
- *
- * Each tab shows a brand dot + label. Hovering reveals a star button
- * to mark the language as a favorite.
- *
- * @param active   - Currently selected language ID.
- * @param starred  - Set of starred/favorite language IDs.
- * @param onSelect - Called when a language tab is clicked.
- * @param onStar   - Toggles the star on a given language.
- */
-function LangTabs({
-  active,
-  starred,
-  onSelect,
-  onStar,
-}: {
-  active: CodeLang;
-  starred: Set<CodeLang>;
-  onSelect: (lang: CodeLang) => void;
-  onStar: (lang: CodeLang) => void;
-}) {
-  return (
-    <div className="flex gap-1 overflow-x-auto pb-1 px-3 pt-3 scrollbar-none">
-      {LANG_ORDER.map((id) => {
-        const conf = CODE_LANGS[id];
-        const isActive = active === id;
-        const isStarred = starred.has(id);
-
-        return (
-          <div key={id} className="relative shrink-0 group/tab">
-            <button
-              onClick={() => onSelect(id)}
-              className={`flex items-center gap-1.5 pl-2.5 pr-7 py-1.5 rounded-lg text-[10px] font-semibold border transition-all duration-150 ${
-                isActive
-                  ? conf.color
-                  : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800 hover:border-zinc-700"
-              }`}
-            >
-              <LangDot color={conf.dot} />
-              {conf.label}
-            </button>
-
-            {/* Star toggle — revealed on hover, always visible when starred */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onStar(id);
-              }}
-              title={isStarred ? "Unstar" : "Star"}
-              className={`absolute right-1.5 top-1/2 -translate-y-1/2 transition-all duration-150 ${
-                isStarred
-                  ? "opacity-100 text-yellow-400"
-                  : "opacity-0 group-hover/tab:opacity-100 text-zinc-600 hover:text-yellow-400"
-              }`}
-            >
-              {isStarred ? (
-                <Star className="w-2.5 h-2.5 fill-yellow-400" />
-              ) : (
-                <StarOff className="w-2.5 h-2.5" />
-              )}
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ── Component ─────────────────────────────────────────
 
 /**
- * Multi-language code generation panel (Postman-style).
+ * Multi-language code generation modal (Postman-style).
  *
- * Generates ready-to-run Socket.IO client snippets for 10 languages:
- * TypeScript, JavaScript, Python, Go, Java, C#, PHP, Ruby, Dart, wscat.
+ * Key layout fix:
+ * - Modal is `h-[80vh]` with `flex flex-col`
+ * - Static sections (header, tabs, bar, footer) are `shrink-0`
+ * - Editor wrapper is `flex-1 min-h-0 relative`
+ * - Inner div is `absolute inset-0` — gives Monaco a concrete pixel height
  *
- * Features:
- * - Collapsible accordion with active-lang badge when closed
- * - Scrollable language tab strip with brand-color dot indicators
- * - Per-tab star/favorite toggle with quick-access favorites row
- * - Live code regeneration as payload / url / token changes
- * - Dynamic editor height based on line count (capped 160–320px)
- * - Read-only Monaco editor with syntax highlighting per language
- * - Copy code + copy install hint buttons
- * - Install command footer per language
+ * This is the same pattern used in EventPanel and is the only reliable
+ * way to give Monaco `height="100%"` inside a flex container.
  */
 export default function CodeGenPanel({
+  open,
+  onClose,
   event,
   url,
   token,
@@ -534,19 +459,37 @@ export default function CodeGenPanel({
 }: CodeGenPanelProps) {
   // ── State ──────────────────────────────────────────
 
-  const [open, setOpen] = useState(false);
   const [lang, setLang] = useState<CodeLang>("typescript");
   const [copied, setCopied] = useState(false);
   const [starred, setStarred] = useState<Set<CodeLang>>(new Set());
+  const modalRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<
+    Parameters<import("@monaco-editor/react").OnMount>[0] | null
+  >(null);
 
   // ── Derived ───────────────────────────────────────
 
-  /** Live-generated code — updates every time payload / lang / url / token changes. */
   const code = generateCode(lang, url, token, event.event, payload);
   const conf = CODE_LANGS[lang];
 
-  /** Dynamic editor height — grows with line count, capped between 160–320px. */
-  const editorH = `${Math.min(Math.max(code.split("\n").length * 19 + 24, 160), 320)}px`;
+  // ── Side effects ──────────────────────────────────
+
+  /** Close on Escape key. */
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    if (open) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  /** Lock body scroll while modal is open. */
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   // ── Handlers ─────────────────────────────────────
 
@@ -564,115 +507,165 @@ export default function CodeGenPanel({
     });
   }
 
+  function handleBackdrop(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  if (!open) return null;
+
   // ── Render ────────────────────────────────────────
 
   return (
+    // ── Backdrop ──
     <div
-      className={`rounded-xl border transition-all duration-200 overflow-hidden shrink-0 ${
-        open
-          ? "border-zinc-700 bg-zinc-900/30"
-          : "border-zinc-800 hover:border-zinc-700"
-      }`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      onClick={handleBackdrop}
     >
-      {/* ── Toggle header ── */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3 group"
+      {/*
+        ── Modal ──
+        h-[80vh]        → concrete pixel height for the whole dialog
+        flex flex-col   → children stack vertically
+        overflow-hidden → clips rounded corners
+      */}
+      <div
+        ref={modalRef}
+        className="relative w-full max-w-3xl h-[80vh] flex flex-col rounded-2xl border border-zinc-700/80 bg-zinc-950 shadow-2xl shadow-black/70 overflow-hidden"
       >
-        <div className="w-7 h-7 rounded-lg bg-zinc-800 group-hover:bg-zinc-700 border border-zinc-700 flex items-center justify-center transition-colors shrink-0">
-          <Code2 className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
-        </div>
+        {/* ── Header — shrink-0 ── */}
+        <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-zinc-800 shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+            <Code2 className="w-3.5 h-3.5 text-zinc-400" />
+          </div>
+          <div className="flex flex-col flex-1 min-w-0">
+            <span className="text-xs font-semibold text-zinc-100 leading-none">
+              Code Generation
+            </span>
+          </div>
 
-        <div className="flex flex-col items-start flex-1 min-w-0">
-          <span className="text-xs font-semibold text-zinc-300 group-hover:text-zinc-100 transition-colors">
-            Code Generation
-          </span>
-          <span className="text-[10px] text-zinc-600">
-            10 languages — TS · JS · Python · Go · Java · C# · PHP · Ruby · Dart
-            · wscat
-          </span>
-        </div>
-
-        {/* Active lang badge — visible when collapsed */}
-        {!open && (
+          {/* Active lang badge */}
           <Badge
             variant="outline"
-            className={`text-[9px] shrink-0 gap-1 px-1.5 h-5 border ${conf.color}`}
+            className={`text-[9px] gap-1 px-1.5 h-5 border shrink-0 ${conf.color}`}
           >
             <LangDot color={conf.dot} />
-            {conf.badge}
+            {conf.label}
           </Badge>
+
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-600 hover:text-zinc-200 hover:bg-zinc-800 transition-all shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* ── Starred row — shrink-0, only when starred ── */}
+        {starred.size > 0 && (
+          <div className="flex items-center gap-2 px-3 pt-2 shrink-0">
+            <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500 shrink-0" />
+            <span className="text-[9px] text-zinc-600 uppercase tracking-widest shrink-0">
+              Favorites
+            </span>
+            <div className="flex gap-1">
+              {LANG_ORDER.filter((id) => starred.has(id)).map((id) => (
+                <button
+                  key={id}
+                  onClick={() => setLang(id)}
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-all ${
+                    lang === id
+                      ? CODE_LANGS[id].color
+                      : "border-zinc-700 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
+                  }`}
+                >
+                  {CODE_LANGS[id].badge}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
-        {/* Starred count pill — visible when collapsed */}
-        {!open && starred.size > 0 && (
-          <span className="flex items-center gap-0.5 text-[10px] text-yellow-500 shrink-0">
-            <Star className="w-2.5 h-2.5 fill-yellow-500" />
-            {starred.size}
-          </span>
-        )}
+        {/* ── Language tab strip — shrink-0 ── */}
+        <div className="flex gap-0.5 px-3 pt-2 pb-1.5 overflow-x-auto shrink-0 scrollbar-none">
+          {LANG_ORDER.map((id) => {
+            const c = CODE_LANGS[id];
+            const isActive = lang === id;
+            const isStarred = starred.has(id);
 
-        {open ? (
-          <ChevronUp className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-        ) : (
-          <ChevronDown className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-        )}
-      </button>
+            return (
+              <div key={id} className="relative shrink-0 group/tab">
+                <button
+                  onClick={() => setLang(id)}
+                  className={`flex items-center gap-1.5 pl-2.5 pr-7 py-1.5 rounded-lg text-[10px] font-semibold border transition-all duration-150 ${
+                    isActive
+                      ? c.color
+                      : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800 hover:border-zinc-700"
+                  }`}
+                >
+                  <LangDot color={c.dot} />
+                  {c.label}
+                </button>
 
-      {/* ── Expanded content ── */}
-      {open && (
-        <div className="flex flex-col border-t border-zinc-800">
-          {/* Starred quick-access row — shown only when at least one lang is starred */}
-          {starred.size > 0 && (
-            <div className="flex items-center gap-2 px-3 pt-2.5">
-              <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500 shrink-0" />
-              <span className="text-[9px] text-zinc-600 uppercase tracking-widest shrink-0">
-                Favorites
-              </span>
-              <div className="flex gap-1 flex-wrap">
-                {LANG_ORDER.filter((id) => starred.has(id)).map((id) => (
-                  <button
-                    key={id}
-                    onClick={() => setLang(id)}
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-all duration-150 ${
-                      lang === id
-                        ? CODE_LANGS[id].color
-                        : "border-zinc-700 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
-                    }`}
-                  >
-                    {CODE_LANGS[id].badge}
-                  </button>
-                ))}
+                {/* Star toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleStar(id);
+                  }}
+                  className={`absolute right-1.5 top-1/2 -translate-y-1/2 transition-all ${
+                    isStarred
+                      ? "opacity-100 text-yellow-400"
+                      : "opacity-0 group-hover/tab:opacity-100 text-zinc-600 hover:text-yellow-400"
+                  }`}
+                >
+                  {isStarred ? (
+                    <Star className="w-2.5 h-2.5 fill-yellow-400" />
+                  ) : (
+                    <StarOff className="w-2.5 h-2.5" />
+                  )}
+                </button>
               </div>
-            </div>
-          )}
+            );
+          })}
+        </div>
 
-          {/* Language tab strip */}
-          <LangTabs
-            active={lang}
-            starred={starred}
-            onSelect={setLang}
-            onStar={toggleStar}
-          />
+        {/* ── Active lang bar + copy — shrink-0 ── */}
+        <div className="flex items-center justify-between px-3 py-1.5 border-t border-b border-zinc-800 bg-zinc-900/50 shrink-0">
+          <div className="flex items-center gap-2">
+            <LangDot color={conf.dot} />
+            <span
+              className={`text-[10px] font-semibold ${conf.color.split(" ")[0]}`}
+            >
+              {conf.label}
+            </span>
+            {starred.has(lang) && (
+              <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+            )}
+            <span className="text-zinc-700 text-[10px]">·</span>
+            <span className="text-[10px] text-zinc-600 font-mono">
+              {event.event}
+            </span>
+          </div>
 
-          {/* Active language bar — lang name + copy button */}
-          <div className="flex items-center justify-between px-3 py-2 border-t border-b border-zinc-800 bg-zinc-900/40">
-            <div className="flex items-center gap-2">
-              <LangDot color={conf.dot} />
-              <span
-                className={`text-[10px] font-semibold ${conf.color.split(" ")[0]}`}
-              >
-                {conf.label}
-              </span>
-              {starred.has(lang) && (
-                <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-              )}
-            </div>
+          <div className="flex items-center gap-1">
+            {/* Format — triggers Monaco's built-in formatDocument action */}
+            <button
+              onClick={() =>
+                editorRef.current
+                  ?.getAction("editor.action.formatDocument")
+                  ?.run()
+              }
+              className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 hover:border-zinc-500 transition-all"
+              title="Format code (Alt+Shift+F)"
+            >
+              <Braces className="w-3 h-3" />
+              Format
+            </button>
 
-            {/* Copy code button */}
+            {/* Copy code */}
             <button
               onClick={handleCopy}
-              className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${
+              className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border transition-all ${
                 copied
                   ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/5"
                   : "border-zinc-700 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 hover:border-zinc-500"
@@ -691,35 +684,49 @@ export default function CodeGenPanel({
               )}
             </button>
           </div>
+        </div>
 
-          {/* Read-only syntax-highlighted Monaco code editor */}
-          <div className="mx-3 mt-3 mb-2 rounded-lg overflow-hidden border border-zinc-800 bg-[#1e1e1e]">
+        {/*
+          ── Editor area ──
+          flex-1 min-h-0 → takes all remaining modal height, allows shrinking
+          relative        → positioning context for the absolute child
+        */}
+        <div className="flex-1 min-h-0 relative">
+          {/*
+            absolute inset-0 → concrete pixel dimensions for Monaco
+            Monaco height="100%" now has a real parent size to measure
+          */}
+          <div className="absolute inset-0 bg-[#1e1e1e]">
             <Editor
-              height={editorH}
+              height="100%"
               language={conf.monacoId}
               value={code}
               theme="vs-dark"
+              onMount={(editor) => {
+                editorRef.current = editor;
+              }}
               options={CODEGEN_EDITOR_OPTIONS}
             />
           </div>
-
-          {/* Install hint footer with copy button */}
-          <div className="flex items-center justify-between px-3 pb-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Terminal className="w-3 h-3 text-zinc-700 shrink-0" />
-              <p className="text-[10px] text-zinc-600 font-mono truncate">
-                {INSTALL_HINT[lang]}
-              </p>
-            </div>
-            <button
-              onClick={() => navigator.clipboard.writeText(INSTALL_HINT[lang])}
-              className="shrink-0 text-[9px] text-zinc-700 hover:text-zinc-400 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-800 ml-2"
-            >
-              copy
-            </button>
-          </div>
         </div>
-      )}
+
+        {/* ── Footer — install hint — shrink-0 ── */}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800 bg-zinc-900/60 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <Terminal className="w-3 h-3 text-zinc-600 shrink-0" />
+            <code className="text-[10px] text-zinc-500 font-mono truncate">
+              {INSTALL_HINT[lang]}
+            </code>
+          </div>
+          <button
+            onClick={() => navigator.clipboard.writeText(INSTALL_HINT[lang])}
+            className="shrink-0 flex items-center gap-1 text-[9px] text-zinc-600 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-800 ml-2"
+          >
+            <Copy className="w-2.5 h-2.5" />
+            copy
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Send,
   Radio,
@@ -26,14 +26,16 @@ import {
   WifiOff,
   AlertCircle,
   X,
+  Code2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Editor, { useMonaco } from "@monaco-editor/react";
+import Editor, { useMonaco, type OnMount } from "@monaco-editor/react";
+import type * as MonacoType from "monaco-editor";
 import { useWsgateStore, type SelectedEvent } from "@/store/wsgate.store";
 import { useSocketStore } from "@/hooks/useSocket";
-import ShortcutHint from "./ShortcutHint";
-import CodeGenPanel from "./CodeGenPanel";
+import CodeGenPanel from "@/components/CodeGenPanel";
+import ShortcutHint from "@/components/ShortcutHint";
 
 // ── Helpers ───────────────────────────────────────────
 
@@ -107,7 +109,11 @@ const BASE_EDITOR_OPTIONS = {
   renderLineHighlight: "none" as const,
   overviewRulerLanes: 0,
   hideCursorInOverviewRuler: true,
-  scrollbar: { vertical: "hidden" as const, horizontal: "hidden" as const },
+  scrollbar: {
+    vertical: "auto" as const,
+    horizontal: "hidden" as const,
+    verticalScrollbarSize: 6,
+  },
   padding: { top: 12, bottom: 12 },
 };
 
@@ -156,8 +162,8 @@ function getTypeConfig(type: string) {
  */
 function EditorShimmer() {
   return (
-    <div className="flex-1 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2.5">
-      {Array.from({ length: 6 }).map((_, i) => (
+    <div className="absolute inset-0 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2.5">
+      {Array.from({ length: 7 }).map((_, i) => (
         <div
           key={i}
           className="h-3 rounded-full bg-zinc-800 animate-pulse"
@@ -169,21 +175,19 @@ function EditorShimmer() {
 }
 
 /**
- * Shimmer skeleton for the header badges and schema pills
- * while the event panel is first rendering.
+ * Shimmer skeleton for the full panel while the editor initializes.
  */
 function PanelShimmer() {
   return (
-    <div className="flex flex-col h-full p-5 gap-5">
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col h-full p-5 gap-5 overflow-hidden">
+      <div className="flex flex-col gap-2 shrink-0">
         <div className="flex items-center gap-2">
           <div className="h-6 w-36 rounded-lg bg-zinc-800 animate-pulse" />
           <div className="h-5 w-20 rounded-full bg-zinc-800 animate-pulse" />
-          <div className="h-5 w-16 rounded-full bg-zinc-800 animate-pulse" />
         </div>
         <div className="h-3 w-52 rounded bg-zinc-800/70 animate-pulse" />
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 shrink-0">
         {[70, 90, 60].map((w, i) => (
           <div
             key={i}
@@ -192,8 +196,18 @@ function PanelShimmer() {
           />
         ))}
       </div>
-      <EditorShimmer />
-      <div className="h-10 w-full rounded-xl bg-zinc-800 animate-pulse" />
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2.5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-3 rounded-full bg-zinc-800 animate-pulse"
+              style={{ width: `${30 + (i % 4) * 15}%` }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="h-11 w-full rounded-xl bg-zinc-800 animate-pulse shrink-0" />
     </div>
   );
 }
@@ -215,7 +229,7 @@ function EmitError({
   onDismiss: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-500/5 border border-red-500/20">
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-500/5 border border-red-500/20 shrink-0">
       <div className="shrink-0 w-6 h-6 rounded-lg bg-red-500/15 flex items-center justify-center">
         <AlertCircle className="w-3.5 h-3.5 text-red-400" />
       </div>
@@ -242,7 +256,7 @@ function EventHeader({ event }: { event: SelectedEvent }) {
   const isEmit = event.type === "emit";
 
   return (
-    <div className="flex flex-col gap-2 pb-4 border-b border-zinc-800/80">
+    <div className="flex flex-col gap-2 pb-4 border-b border-zinc-800/80 shrink-0">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
@@ -308,7 +322,6 @@ function EventHeader({ event }: { event: SelectedEvent }) {
 
 /**
  * Renders typed schema pills for a given payload definition.
- * Each pill shows the field name, an inferred type icon, and the type string.
  *
  * @param payload - The payload schema map from `WsEvent`.
  * @param label   - Section label shown above the pills.
@@ -324,7 +337,7 @@ function SchemaPills({
   if (entries.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 shrink-0">
       <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
         {label}
       </span>
@@ -393,15 +406,22 @@ function CopyButton({ text }: { text: string }) {
  * Reads socket emit and status from `useSocketStore`.
  * Zero props — fully store-driven.
  *
- * Renders one of two views depending on the selected event type:
+ * Layout:
+ * - `flex flex-col h-full overflow-hidden` outer container
+ * - Static sections: `shrink-0`
+ * - Editor: `flex-1 min-h-0 relative` → `absolute inset-0` gives Monaco
+ *   a concrete pixel height without hardcoding px values
+ *
+ * Emit button lives in the editor toolbar (top-right of editor area)
+ * for minimal distance between editing and sending.
+ *
+ * Code generation opens as a full modal via the `<CodeGenPanel>` component.
  *
  * **emit** — Client → Server
  * - Monaco JSON editor with schema validation and autocomplete
  * - Auto-generated payload skeleton from `@WsDoc()` metadata
- * - Typed schema pills per field
- * - Copy + Reset payload toolbar
- * - Code generation panel (TypeScript / JavaScript / Python / wscat)
- * - Emit button with keyboard shortcut (Ctrl+Enter)
+ * - Editor toolbar: Copy · Format · Reset · Code · [Emit button]
+ * - Ctrl+Enter keyboard shortcut
  *
  * **subscribe** — Server → Client
  * - Read-only Monaco JSON preview of the expected response shape
@@ -420,7 +440,29 @@ export default function EventPanel() {
   const [error, setError] = useState<string | null>(null);
   const [editorReady, setEditorReady] = useState(false);
   const [emitSuccess, setEmitSuccess] = useState(false);
+  const [codeGenOpen, setCodeGenOpen] = useState(false);
+
+  /**
+   * Ref to the Monaco editor instance.
+   * Used to call `formatDocument` imperatively.
+   */
+  const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(
+    null,
+  );
   const monaco = useMonaco();
+
+  // ── Editor mount ──────────────────────────────────────
+
+  /**
+   * Captures the Monaco editor instance on mount.
+   * Runs an initial format pass on the auto-generated skeleton.
+   */
+  const handleEditorMount: OnMount = (editor) => {
+    editorRef.current = editor;
+    setTimeout(() => {
+      editor.getAction("editor.action.formatDocument")?.run();
+    }, 100);
+  };
 
   // ── Reset on event change ─────────────────────────────
 
@@ -435,6 +477,7 @@ export default function EventPanel() {
   /**
    * When a new event is selected, populate the Monaco editor
    * with a skeleton JSON object derived from the event's payload schema.
+   * Triggers a format pass 150ms after value is applied.
    */
   useEffect(() => {
     if (!selectedEvent) return;
@@ -442,6 +485,9 @@ export default function EventPanel() {
     setPayload(JSON.stringify(skeleton, null, 2));
     setError(null);
     setEmitSuccess(false);
+    setTimeout(() => {
+      editorRef.current?.getAction("editor.action.formatDocument")?.run();
+    }, 150);
   }, [selectedEvent]);
 
   // ── Monaco JSON schema registration ──────────────────
@@ -505,12 +551,23 @@ export default function EventPanel() {
     }
   }
 
+  /**
+   * Triggers Monaco's built-in `formatDocument` action.
+   * Equivalent to pressing Alt+Shift+F in the editor.
+   */
+  function handleFormat() {
+    editorRef.current?.getAction("editor.action.formatDocument")?.run();
+  }
+
   /** Resets the payload editor back to the auto-generated skeleton. */
   function handleReset() {
     if (!selectedEvent) return;
     const skeleton = buildPayloadSkeleton(selectedEvent.payload ?? {});
     setPayload(JSON.stringify(skeleton, null, 2));
     setError(null);
+    setTimeout(() => {
+      editorRef.current?.getAction("editor.action.formatDocument")?.run();
+    }, 100);
   }
 
   /**
@@ -560,36 +617,36 @@ export default function EventPanel() {
 
   // ── Shimmer while editor initializes ─────────────────
 
-  if (!editorReady) {
-    return <PanelShimmer />;
-  }
+  if (!editorReady) return <PanelShimmer />;
 
   // ── Subscribe view — server → client ──────────────────
 
   if (selectedEvent.type === "subscribe") {
     return (
-      <div className="flex flex-col h-full p-5 gap-5 overflow-y-auto">
+      <div className="flex flex-col h-full overflow-hidden p-5 gap-4">
         <EventHeader event={selectedEvent} />
-
         <SchemaPills
           payload={selectedEvent.payload ?? {}}
           label="Response Shape"
         />
 
-        <div className="flex flex-col gap-2 flex-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-              Example Response
-            </span>
-            <CopyButton
-              text={JSON.stringify(
-                buildPayloadSkeleton(selectedEvent.payload ?? {}),
-                null,
-                2,
-              )}
-            />
-          </div>
-          <div className="flex-1 rounded-xl overflow-hidden border border-zinc-800 bg-[#1e1e1e]">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between shrink-0">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+            Example Response
+          </span>
+          <CopyButton
+            text={JSON.stringify(
+              buildPayloadSkeleton(selectedEvent.payload ?? {}),
+              null,
+              2,
+            )}
+          />
+        </div>
+
+        {/* Editor */}
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0 rounded-xl overflow-hidden border border-zinc-800 bg-[#1e1e1e]">
             <Editor
               height="100%"
               defaultLanguage="json"
@@ -608,6 +665,7 @@ export default function EventPanel() {
           </div>
         </div>
 
+        {/* Info note */}
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 shrink-0">
           <div className="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
             <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400" />
@@ -625,94 +683,153 @@ export default function EventPanel() {
   // ── Emit view — client → server ───────────────────────
 
   return (
-    <div className="flex flex-col h-full p-5 gap-4 overflow-y-auto">
-      {/* Event header */}
-      <EventHeader event={selectedEvent} />
+    <>
+      <div className="flex flex-col h-full overflow-hidden p-5 gap-4">
+        {/* Event header */}
+        <EventHeader event={selectedEvent} />
 
-      {/* Payload schema pills */}
-      <SchemaPills
-        payload={selectedEvent.payload ?? {}}
-        label="Payload Schema"
-      />
+        {/* Payload schema pills */}
+        <SchemaPills
+          payload={selectedEvent.payload ?? {}}
+          label="Payload Schema"
+        />
 
-      {/* Response event name */}
-      {selectedEvent.response && (
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-            Response event
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 rounded-lg px-2 py-1">
-            <Radio className="w-2.5 h-2.5" />
-            {selectedEvent.response}
-          </span>
-        </div>
-      )}
+        {/* Response event */}
+        {selectedEvent.response && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+              Response event
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 rounded-lg px-2 py-1">
+              <Radio className="w-2.5 h-2.5" />
+              {selectedEvent.response}
+            </span>
+          </div>
+        )}
 
-      {/* Monaco JSON editor */}
-      <div className="flex flex-col gap-2 flex-1 min-h-[180px]">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-            Payload (JSON)
-          </span>
-          <div className="flex items-center gap-1">
-            <CopyButton text={payload} />
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
-              title="Reset to skeleton"
+        {/* ── Editor section ── */}
+        <div className="flex flex-col gap-2 flex-1 min-h-0">
+          {/* ── Editor toolbar — all actions including emit ── */}
+          <div className="flex items-center justify-between shrink-0">
+            {/* Left — label */}
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+              Payload (JSON)
+            </span>
+
+            {/* Right — utility actions + emit */}
+            <div className="flex items-center gap-1">
+              {/* Copy payload */}
+              <CopyButton text={payload} />
+
+              {/* Format — Monaco formatDocument */}
+              <button
+                onClick={handleFormat}
+                className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
+                title="Format JSON (Alt+Shift+F)"
+              >
+                <Braces className="w-3 h-3" />
+                Format
+              </button>
+
+              {/* Reset to skeleton */}
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
+                title="Reset to skeleton"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-4 bg-zinc-800 mx-1" />
+
+              {/* Code generation — opens modal */}
+              <button
+                onClick={() => setCodeGenOpen(true)}
+                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-all duration-150 px-2.5 py-1.5 rounded-lg border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800"
+                title="Generate client code"
+              >
+                <Code2 className="w-3 h-3" />
+                Code
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-4 bg-zinc-800 mx-1" />
+
+              {/* ── Emit button — lives in toolbar, top-right of editor ── */}
+              <button
+                onClick={handleEmit}
+                disabled={!connected}
+                title={connected ? "Emit event (Ctrl+Enter)" : "Connect first"}
+                className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all duration-200
+                  disabled:opacity-40 disabled:cursor-not-allowed ${
+                    emitSuccess
+                      ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                      : connected
+                        ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/40 hover:shadow-blue-800/50 hover:scale-[1.02] active:scale-[0.98]"
+                        : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                  }`}
+              >
+                {emitSuccess ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    Emitted!
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    {connected ? "Emit" : "Connect"}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Monaco editor — flex-1 min-h-0 + absolute inset-0 ── */}
+          <div className="flex-1 min-h-0 relative">
+            <div
+              className={`absolute inset-0 rounded-xl overflow-hidden border transition-all duration-200 bg-[#1e1e1e] ${
+                error
+                  ? "border-red-500/40 shadow-[0_0_0_3px_rgba(239,68,68,0.06)]"
+                  : "border-zinc-800 hover:border-zinc-700 focus-within:border-zinc-600"
+              }`}
             >
-              <RotateCcw className="w-3 h-3" />
-              Reset
-            </button>
+              {editorReady ? (
+                <Editor
+                  height="100%"
+                  defaultLanguage="json"
+                  value={payload}
+                  onMount={handleEditorMount}
+                  onChange={(val) => {
+                    setPayload(val ?? "");
+                    setError(null);
+                  }}
+                  theme="vs-dark"
+                  options={{
+                    ...BASE_EDITOR_OPTIONS,
+                    tabSize: 2,
+                    formatOnPaste: true,
+                    formatOnType: true,
+                    autoClosingBrackets: "always",
+                    autoClosingQuotes: "always",
+                  }}
+                />
+              ) : (
+                <EditorShimmer />
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Editor */}
-        <div
-          className={`flex-1 rounded-xl overflow-hidden border transition-all duration-200 bg-[#1e1e1e] ${
-            error
-              ? "border-red-500/40 shadow-[0_0_0_3px_rgba(239,68,68,0.06)]"
-              : "border-zinc-800 hover:border-zinc-700 focus-within:border-zinc-600"
-          }`}
-        >
-          <Editor
-            height="100%"
-            defaultLanguage="json"
-            value={payload}
-            onChange={(val) => {
-              setPayload(val ?? "");
-              setError(null);
-            }}
-            theme="vs-dark"
-            options={{
-              ...BASE_EDITOR_OPTIONS,
-              tabSize: 2,
-              formatOnPaste: true,
-              formatOnType: true,
-              autoClosingBrackets: "always",
-              autoClosingQuotes: "always",
-            }}
-          />
-        </div>
-      </div>
+        {/* Emit error banner */}
+        {error && (
+          <EmitError message={error} onDismiss={() => setError(null)} />
+        )}
 
-      {/* ── Code generation panel ── */}
-      <CodeGenPanel
-        event={selectedEvent}
-        url={url}
-        token={token}
-        payload={payload}
-      />
-
-      {/* Emit error banner */}
-      {error && <EmitError message={error} onDismiss={() => setError(null)} />}
-
-      {/* ── Emit button area ── */}
-      <div className="flex flex-col gap-2 shrink-0">
         {/* Not connected warning */}
         {!connected && (
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0">
             <WifiOff className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
             <p className="text-xs text-zinc-600">
               Connect to a server from the navbar to emit events
@@ -720,36 +837,19 @@ export default function EventPanel() {
           </div>
         )}
 
-        {/* Emit button */}
-        <Button
-          onClick={handleEmit}
-          disabled={!connected}
-          className={`w-full h-11 gap-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
-            emitSuccess
-              ? "bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 scale-[0.99]"
-              : connected
-                ? "bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/30 hover:shadow-blue-800/40 hover:scale-[1.01] active:scale-[0.99]"
-                : "bg-zinc-800 border border-zinc-700"
-          }`}
-        >
-          {emitSuccess ? (
-            <>
-              <Check className="w-4 h-4 animate-[scale_0.2s_ease]" />
-              Emitted!
-            </>
-          ) : (
-            <>
-              <Send
-                className={`w-4 h-4 transition-transform ${connected ? "group-hover:translate-x-0.5" : ""}`}
-              />
-              {connected ? "Emit Event" : "Connect to emit"}
-            </>
-          )}
-        </Button>
-
-        {/* Keyboard shortcut hint — only when connected */}
+        {/* Keyboard shortcut hint */}
         {connected && !emitSuccess && <ShortcutHint />}
       </div>
-    </div>
+
+      {/* ── Code generation modal ── */}
+      <CodeGenPanel
+        open={codeGenOpen}
+        onClose={() => setCodeGenOpen(false)}
+        event={selectedEvent}
+        url={url}
+        token={token}
+        payload={payload}
+      />
+    </>
   );
 }
