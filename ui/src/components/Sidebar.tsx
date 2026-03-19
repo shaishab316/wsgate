@@ -28,10 +28,9 @@ const TYPE_CONFIG: Record<"emit" | "subscribe", string> = {
 /**
  * Left sidebar panel for the nestjs-wsgate UI.
  *
- * Fetches the list of discovered `@WsDoc()` events from the
- * `/wsgate/events.json` endpoint (or a custom URL via the
- * `?eventsUrl=` query parameter) and renders them as a
- * selectable list.
+ * Fetches discovered `@WsDoc()` events from the events JSON endpoint.
+ * The endpoint URL is derived from the store's `url` field:
+ * `{url}/wsgate/events.json`
  *
  * Selected event is read and written via Zustand store,
  * persisted to localStorage automatically.
@@ -40,16 +39,14 @@ const TYPE_CONFIG: Record<"emit" | "subscribe", string> = {
  * - The Socket.IO event name
  * - A `type` badge (`emit` or `subscribe`)
  * - A short description
- *
- * @example
- * // Events URL can be overridden via query param:
- * // http://localhost:3000/wsgate?eventsUrl=http://localhost:3000/wsgate/events.json
  */
 export default function Sidebar() {
   // ── Store ─────────────────────────────────────────────
-  const { selectedEvent, setSelectedEvent } = useWsgateStore();
+
+  const { url, selectedEvent, setSelectedEvent } = useWsgateStore();
 
   // ── Local state ───────────────────────────────────────
+
   const [events, setEvents] = useState<WsEvent[]>([]);
   const [title, setTitle] = useState("nestjs-wsgate");
   const [loading, setLoading] = useState(true);
@@ -58,16 +55,16 @@ export default function Sidebar() {
   // ── Fetch events ──────────────────────────────────────
 
   /**
-   * Fetches event metadata from the events JSON endpoint on mount.
-   * The endpoint URL is read from the `?eventsUrl=` query parameter,
-   * falling back to `/wsgate/events.json` if not present.
+   * Fetches event metadata from `{url}/wsgate/events.json` on mount.
+   * Re-fetches whenever the store URL changes.
    */
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const eventsUrl =
-      params.get("eventsUrl") ?? "http://localhost:3000/wsgate/events.json";
+    if (!url) return;
 
-    fetch(eventsUrl)
+    setLoading(true);
+    setError(null);
+
+    fetch(`${url}/wsgate/events.json`)
       .then((res) => res.json() as Promise<WsEventsResponse>)
       .then((data) => {
         setEvents(data.events);
@@ -78,7 +75,7 @@ export default function Sidebar() {
         setError("Failed to load events");
         setLoading(false);
       });
-  }, []);
+  }, [url]);
 
   // ── Render ───────────────────────────────────────────
 

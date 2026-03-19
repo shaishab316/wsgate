@@ -63,21 +63,16 @@ export default function Navbar() {
   // ── State ────────────────────────────────────────────
 
   /**
-   * Pre-populate URL from `?url=` query param injected by NestJS,
-   * falling back to localhost if not present.
+   * URL and token are read and written directly from the Zustand store.
+   * No local state needed — persisted automatically to localStorage.
    */
-  const [url, setUrl] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("url") ?? "http://localhost:3000";
-  });
+  const { url, token, setUrl, setToken } = useWsgateStore();
 
   const { addLog } = useWsgateStore();
 
   const { status, connect, disconnect } = useSocket({
     onEvent: (event, data) => addLog("in", event, data),
   });
-
-  const [token, setToken] = useState("");
 
   const isConnected = status === "connected";
   const isConnecting = status === "connecting";
