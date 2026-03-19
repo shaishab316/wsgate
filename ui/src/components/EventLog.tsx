@@ -15,25 +15,33 @@ export default function EventLog({ logs, onClear }: Props) {
   const [copied, setCopied] = useState<number | null>(null);
   const [filterInput, setFilterInput] = useState("");
   const [filter, setFilter] = useState("");
+  const [direction, setDirection] = useState<"all" | "in" | "out">("all");
 
   const { filteredLogs, regexError } = useMemo(() => {
-    if (!filter) return { filteredLogs: logs, regexError: false };
+    let result = logs;
+
+    if (direction !== "all") {
+      result = result.filter((log) => log.direction === direction);
+    }
+
+    if (!filter) return { filteredLogs: result, regexError: false };
+
     try {
       const regex = new RegExp(filter, "i");
       return {
-        filteredLogs: logs.filter((log) => regex.test(log.event)),
+        filteredLogs: result.filter((log) => regex.test(log.event)),
         regexError: false,
       };
     } catch {
-      return { filteredLogs: logs, regexError: true };
+      return { filteredLogs: result, regexError: true };
     }
-  }, [filter, logs]);
+  }, [filter, logs, direction]);
 
   useEffect(() => {
-    if (!filter) {
+    if (!filter && direction === "all") {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [logs, filter]);
+  }, [logs, filter, direction]);
 
   function applyFilter() {
     setFilter(filterInput);
@@ -82,14 +90,34 @@ export default function EventLog({ logs, onClear }: Props) {
             </Badge>
           )}
         </div>
-        {logs.length > 0 && (
-          <button
-            onClick={onClear}
-            className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            Clear
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Direction toggle */}
+          <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-700 rounded-md p-0.5">
+            {(["all", "out", "in"] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDirection(d)}
+                className={`text-xs px-2 py-1 rounded transition-colors ${
+                  direction === d
+                    ? "bg-zinc-700 text-zinc-100"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {d === "all" ? "All" : d === "out" ? "↑ Out" : "↓ In"}
+              </button>
+            ))}
+          </div>
+
+          {/* Clear */}
+          {logs.length > 0 && (
+            <button
+              onClick={onClear}
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter input */}
@@ -141,7 +169,9 @@ export default function EventLog({ logs, onClear }: Props) {
               <span className="text-zinc-700 text-xs">○</span>
             </div>
             <p className="text-xs text-zinc-600">
-              {filter ? "No matching events" : "No events yet"}
+              {filter || direction !== "all"
+                ? "No matching events"
+                : "No events yet"}
             </p>
           </div>
         ) : (
