@@ -21,6 +21,13 @@ interface WsgateState {
   clearLogs: () => void;
 }
 
+/**
+ * Re-export the store state type for use in component prop types.
+ * Avoids the `ReturnType<typeof useWsgateStore>` anti-pattern which
+ * returns the hook signature, not the state shape.
+ */
+export type SelectedEvent = NonNullable<WsgateState["selectedEvent"]>;
+
 export const useWsgateStore = create<WsgateState>()(
   persist(
     (set, get) => ({
