@@ -879,11 +879,6 @@ export default function Sidebar() {
       {/* ── Header ── */}
       <div className="px-4 py-3 border-b border-zinc-800 shrink-0">
         <div className="flex items-center gap-2">
-          {/* Logo mark */}
-          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20">
-            <Zap className="w-3.5 h-3.5 text-white fill-white" />
-          </div>
-
           <div className="flex flex-col leading-none flex-1 min-w-0">
             <h1 className="text-sm font-bold text-zinc-100 truncate flex items-center gap-2">
               {title}
@@ -894,9 +889,6 @@ export default function Sidebar() {
                 </span>
               )}
             </h1>
-            <p className="text-[10px] text-zinc-600 mt-0.5">
-              Socket.IO Explorer
-            </p>
           </div>
 
           {/* Total event count */}

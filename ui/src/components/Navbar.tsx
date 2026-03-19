@@ -17,7 +17,6 @@ import {
   KeyRound,
   Eye,
   EyeOff,
-  Zap,
   Wifi,
   WifiOff,
   AlertTriangle,
@@ -30,6 +29,7 @@ import { useWsgateStore } from "@/store/wsgate.store";
 import { useSocketStore } from "@/hooks/useSocket";
 import { debounce } from "@/utils/debounce";
 import type { SocketStatus } from "@/hooks/useSocket";
+import appIcon from "@/assets/icon.png";
 
 // ── Status config ─────────────────────────────────────
 
@@ -265,20 +265,11 @@ export default function Navbar() {
   return (
     <div className="flex items-center gap-2 px-4 h-14 border-b border-zinc-800 bg-zinc-950 shrink-0">
       {/* ── Logo ── */}
-      <div className="flex items-center gap-2 mr-2 shrink-0 select-none">
-        <div className="relative w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-900/40">
-          <Zap className="w-4 h-4 text-white fill-white" />
-          {/* glow ring when connected */}
-          {isConnected && (
-            <span className="absolute inset-0 rounded-lg ring-1 ring-emerald-400/40 animate-pulse" />
-          )}
-        </div>
+      <div className="flex items-center gap-2 shrink-0 select-none grow">
+        <img src={appIcon} alt="WS Gate Logo" className="size-8" />
         <div className="flex flex-col leading-none">
-          <span className="text-[13px] font-bold text-zinc-100 tracking-tight">
-            wsgate
-          </span>
-          <span className="text-[9px] text-zinc-600 tracking-widest uppercase">
-            nestjs
+          <span className="text-lg font-bold text-zinc-100 tracking-tight">
+            WS Gate
           </span>
         </div>
       </div>
