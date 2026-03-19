@@ -4,10 +4,19 @@ import Sidebar from "./components/Sidebar";
 import EventPanel from "./components/EventPanel";
 import EventLog from "./components/EventLog";
 import { useSocket } from "./hooks/useSocket";
+import type { WsEvent } from "./types/ws-event";
 
 export default function App() {
-  const { status, connect, disconnect, emit } = useSocket();
-  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const { status, connect, disconnect, emit } = useSocket({
+    onEvent: (event, data) => {
+      const timestamp = new Date().toLocaleTimeString();
+      setLogs((p) => [
+        ...p,
+        `[${timestamp}] ← ${event}\n${JSON.stringify(data, null, 2)}`,
+      ]);
+    },
+  });
+  const [selectedEvent, setSelectedEvent] = useState<WsEvent | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
 
   const connected = status === "connected";

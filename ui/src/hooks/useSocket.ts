@@ -7,7 +7,11 @@ export type SocketStatus =
   | "connected"
   | "error";
 
-export function useSocket() {
+interface Props {
+  onEvent: (event: string, data: unknown) => void;
+}
+
+export function useSocket({ onEvent }: Props) {
   const [status, setStatus] = useState<SocketStatus>("disconnected");
   const socketRef = useRef<Socket | null>(null);
 
@@ -23,6 +27,11 @@ export function useSocket() {
     socket.on("disconnect", () => setStatus("disconnected"));
     socket.on("connect_error", () => setStatus("error"));
 
+    // ← listen to ALL incoming server events
+    socket.onAny((event: string, data: unknown) => {
+      onEvent(event, data);
+    });
+
     socketRef.current = socket;
   }
 
@@ -36,5 +45,5 @@ export function useSocket() {
     socketRef.current?.emit(event, payload);
   }
 
-  return { status, connect, disconnect, emit, socket: socketRef.current };
+  return { status, connect, disconnect, emit };
 }
