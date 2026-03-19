@@ -1,4 +1,5 @@
 import {
+  ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
@@ -11,158 +12,123 @@ import { Server, Socket } from 'socket.io';
 import { WsDoc } from 'nestjs-wsgate';
 
 /**
- * AdminGateway handles real-time WebSocket events for the admin panel.
- *
- * This gateway demonstrates two namespace behaviours provided by nestjs-wsgate:
- *
- * 1. **Auto-detection** — `@WsDoc()` events without an explicit `namespace`
- *    field automatically inherit `/admin` from the `@WebSocketGateway()` decorator.
- *
- * 2. **Manual override** — A single event can opt into a different namespace
- *    by setting `namespace` directly in `@WsDoc()`, overriding the class-level value.
+ * AdminGateway handles admin operations like announcements and server monitoring.
  *
  * Connect to: ws://localhost:3000/admin
  */
 @WebSocketGateway({
   cors: { origin: '*' },
-  namespace: '/admin', // auto-detected by WsgateExplorer → '/admin'
+  namespace: '/admin',
 })
 export class AdminGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer()
-  server!: Server;
-
-  private readonly logger = new Logger(AdminGateway.name);
-
-  // ── Lifecycle Hooks ───────────────────────────────────
+  @WebSocketServer() server!: Server;
+  private logger = new Logger(AdminGateway.name);
 
   handleConnection(client: Socket) {
-    this.logger.log(`Admin client connected    → ${client.id}`);
+    this.logger.log(`Admin connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Admin client disconnected → ${client.id}`);
+    this.logger.log(`Admin disconnected: ${client.id}`);
   }
 
-  // ── Emit Events (client → server) ────────────────────
-  // namespace is auto-detected from @WebSocketGateway({ namespace: 'admin' }) → '/admin'
-
-  /**
-   * Broadcast a system-wide alert to all connected admin clients.
-   *
-   * @emits admin:alert - Delivers the alert to all admin clients.
-   */
   @WsDoc({
-    // namespace not set → auto-detected as '/admin'
-    event: 'admin:alert',
-    description: 'Broadcast a system-wide alert to all admin clients.',
-    payload: { message: 'string', severity: 'low | medium | high | critical' },
-    response: 'admin:alert',
-    type: 'emit',
-  })
-  @SubscribeMessage('admin:alert')
-  handleAlert(
-    @MessageBody() body: { message: string; severity: string },
-  ): void {
-    this.logger.warn(`Admin alert [${body.severity}]: ${body.message}`);
-    this.server.emit('admin:alert', {
-      message: body.message,
-      severity: body.severity,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  /**
-   * Kick a connected client by socket ID.
-   *
-   * @emits admin:kicked - Notifies the target client before disconnection.
-   */
-  @WsDoc({
-    // namespace not set → auto-detected as '/admin'
-    event: 'admin:kick',
-    description: 'Kick a connected client by socket ID.',
-    payload: { clientId: 'string', reason: 'string' },
-    response: 'admin:kicked',
-    type: 'emit',
-  })
-  @SubscribeMessage('admin:kick')
-  handleKick(@MessageBody() body: { clientId: string; reason: string }): void {
-    this.logger.warn(`Kicking client ${body.clientId}: ${body.reason}`);
-    this.server.to(body.clientId).emit('admin:kicked', { reason: body.reason });
-    this.server.in(body.clientId).disconnectSockets(true);
-  }
-
-  // ── Manual namespace override ─────────────────────────
-  // This event is shared with the public /metrics namespace.
-  // The explicit namespace in @WsDoc() overrides the class-level '/admin'.
-
-  /**
-   * Request a snapshot of live server metrics.
-   *
-   * @emits metrics:snapshot - Delivers the metrics snapshot to the requester.
-   */
-  @WsDoc({
-    event: 'metrics:request',
-    description: 'Request a live snapshot of server metrics.',
-    payload: { fields: 'string' },
-    response: 'metrics:snapshot',
-    type: 'emit',
-  })
-  @SubscribeMessage('metrics:request')
-  handleMetricsRequest(@MessageBody() body: { fields: string }): void {
-    this.logger.log(`Metrics requested: ${body.fields}`);
-    this.server.emit('metrics:snapshot', {
-      cpu: process.cpuUsage(),
-      memory: process.memoryUsage(),
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  // ── Subscribe Events (server → client) ───────────────
-  // These methods exist purely for nestjs-wsgate documentation.
-  // They are never called — the server emits these events directly.
-
-  /**
-   * Received by all admin clients when an alert is broadcast.
-   */
-  @WsDoc({
-    // namespace not set → auto-detected as '/admin'
-    event: 'admin:alert',
-    description: 'Received by all admin clients when an alert is broadcast.',
+    event: 'announce:send',
+    description: 'Broadcast an announcement to all connected users.',
     payload: {
+      title: 'string',
       message: 'string',
-      severity: 'low | medium | high | critical',
-      timestamp: 'string',
+      level: 'info | warning | error',
     },
-    type: 'subscribe',
+    response: 'announce:receive',
+    type: 'emit',
   })
-  onAlert(): void {}
+  @SubscribeMessage('announce:send')
+  handleAnnouncement(
+    @MessageBody() data: { title: string; message: string; level: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.logger.log(`[${data.level}] ${data.title}: ${data.message}`);
+    this.server.emit('announce:receive', {
+      title: data.title,
+      message: data.message,
+      level: data.level,
+      timestamp: new Date().toISOString(),
+    });
+    return {
+      status: 'announced',
+      recipients: 'all',
+      timestamp: new Date().toISOString(),
+    };
+  }
 
-  /**
-   * Received by a client when they have been kicked by an admin.
-   */
   @WsDoc({
-    // namespace not set → auto-detected as '/admin'
-    event: 'admin:kicked',
-    description: 'Received by a client when they are kicked by an admin.',
-    payload: { reason: 'string' },
-    type: 'subscribe',
+    event: 'kick:user',
+    description: 'Disconnect a user from the server.',
+    payload: { socketId: 'string', reason: 'string' },
+    response: 'user:kicked',
+    type: 'emit',
   })
-  onKicked(): void {}
+  @SubscribeMessage('kick:user')
+  handleKickUser(
+    @MessageBody() data: { socketId: string; reason: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.server.to(data.socketId).emit('user:kicked', {
+      reason: data.reason,
+      timestamp: new Date().toISOString(),
+    });
+    this.server.in(data.socketId).disconnectSockets(true);
+    this.logger.warn(`User kicked: ${data.socketId} - ${data.reason}`);
+    return {
+      status: 'kicked',
+      socketId: data.socketId,
+      timestamp: new Date().toISOString(),
+    };
+  }
 
-  /**
-   * Received by the requester with live server metrics.
-   */
   @WsDoc({
-    event: 'metrics:snapshot',
-    description: 'Received with a live snapshot of server metrics.',
+    event: 'stats:request',
+    description: 'Get current server statistics.',
+    payload: {},
+    response: 'stats:response',
+    type: 'emit',
+  })
+  @SubscribeMessage('stats:request')
+  handleStatsRequest(@ConnectedSocket() client: Socket) {
+    client.emit('stats:response', {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  @WsDoc({
+    event: 'announce:receive',
+    description: 'Receive an announcement from admin.',
     payload: {
-      cpu: 'string',
-      memory: 'string',
-      uptime: 'string',
+      title: 'string',
+      message: 'string',
+      level: 'string',
       timestamp: 'string',
     },
     type: 'subscribe',
   })
-  onMetricsSnapshot(): void {}
+  onAnnouncement() {}
+
+  @WsDoc({
+    event: 'user:kicked',
+    description: 'User has been kicked from the server.',
+    payload: { reason: 'string', timestamp: 'string' },
+    type: 'subscribe',
+  })
+  onUserKicked() {}
+
+  @WsDoc({
+    event: 'stats:response',
+    description: 'Server statistics response.',
+    payload: { uptime: 'number', memory: 'object', timestamp: 'string' },
+    type: 'subscribe',
+  })
+  onStatsResponse() {}
 }

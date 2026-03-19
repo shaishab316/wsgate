@@ -3,7 +3,6 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -13,257 +12,158 @@ import { Server, Socket } from 'socket.io';
 import { WsDoc } from 'nestjs-wsgate';
 
 /**
- * ChatGateway handles all real-time WebSocket events for the chat system.
+ * ChatGateway demonstrates simple real-world WebSocket messaging.
+ * Handles room-based chat and direct messaging between clients.
  *
- * This gateway demonstrates the full usage of `@WsDoc()` from nestjs-wsgate,
- * documenting both client → server (`emit`) and server → client (`subscribe`)
- * events for the nestjs-wsgate interactive UI.
- *
- * Connect to: ws://localhost:3000
+ * Connect to: ws://localhost:3000/chat
  */
 @WebSocketGateway({
   cors: { origin: '*' },
   namespace: '/chat',
 })
-export class ChatGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
-  @WebSocketServer()
-  server!: Server;
-
-  private readonly logger = new Logger(ChatGateway.name);
-
-  // ── Lifecycle Hooks ───────────────────────────────────
-
-  afterInit() {
-    this.logger.log('WebSocket Gateway initialized');
-  }
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server!: Server;
+  private logger = new Logger(ChatGateway.name);
+  private userNames = new Map<string, string>();
 
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected    → ${client.id}`);
+    this.logger.log(`Client connected: ${client.id}`);
+    this.userNames.set(client.id, `User_${client.id.substring(0, 5)}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected → ${client.id}`);
+    const username = this.userNames.get(client.id);
+    this.logger.log(`Client disconnected: ${username}`);
+    this.userNames.delete(client.id);
   }
 
-  // ── Emit Events (client → server) ────────────────────
-
-  /**
-   * Echo a message back to all connected clients.
-   *
-   * @emits message - Broadcasts the echoed message to all clients.
-   */
   @WsDoc({
-    event: 'message',
-    description: 'Send a message — server echoes it back to everyone.',
-    payload: { msg: 'string' },
-    response: 'message',
+    event: 'message:send',
+    description: 'Send a message to a specific room.',
+    payload: { room: 'string', text: 'string' },
+    response: 'message:receive',
     type: 'emit',
   })
-  @SubscribeMessage('message')
-  handleMessage(@MessageBody() body: { msg: string }): void {
-    this.logger.log(`message → ${body.msg}`);
-    this.server.emit('message', `Server: ${body.msg}`);
+  @SubscribeMessage('message:send')
+  handleSendMessage(
+    @MessageBody() data: { room: string; text: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const username = this.userNames.get(client.id);
+    this.server.to(data.room).emit('message:receive', {
+      username,
+      text: data.text,
+      timestamp: new Date().toISOString(),
+    });
+    return { status: 'delivered', timestamp: new Date().toISOString() };
   }
 
-  /**
-   * Join a named chat room.
-   *
-   * @emits room:joined - Notifies the room that a new user has joined.
-   */
   @WsDoc({
     event: 'room:join',
-    description: 'Join a chat room by name.',
-    payload: { room: 'string', username: 'string' },
+    description: 'Join a chat room.',
+    payload: { room: 'string' },
     response: 'room:joined',
     type: 'emit',
   })
   @SubscribeMessage('room:join')
   handleJoinRoom(
-    @MessageBody() body: { room: string; username: string },
+    @MessageBody() data: { room: string },
     @ConnectedSocket() client: Socket,
-  ): void {
-    client.join(body.room);
-    this.logger.log(`${body.username} joined room → ${body.room}`);
-    this.server.to(body.room).emit('room:joined', {
-      room: body.room,
-      username: body.username,
-      message: `${body.username} has joined the room.`,
-    });
-  }
-
-  /**
-   * Send a message to a specific chat room.
-   *
-   * @emits room:message - Delivers the message to all room members.
-   */
-  @WsDoc({
-    event: 'room:message',
-    description: 'Send a message to a specific room.',
-    payload: { room: 'string', username: 'string', msg: 'string' },
-    response: 'room:message',
-    type: 'emit',
-  })
-  @SubscribeMessage('room:message')
-  handleRoomMessage(
-    @MessageBody() body: { room: string; username: string; msg: string },
-  ): void {
-    this.logger.log(`[${body.room}] ${body.username}: ${body.msg}`);
-    this.server.to(body.room).emit('room:message', {
-      username: body.username,
-      msg: body.msg,
+  ) {
+    const username = this.userNames.get(client.id);
+    client.join(data.room);
+    this.server.to(data.room).emit('room:joined', {
+      username,
+      message: `${username} joined the room`,
       timestamp: new Date().toISOString(),
     });
+    return {
+      status: 'joined',
+      room: data.room,
+      timestamp: new Date().toISOString(),
+    };
   }
 
-  /**
-   * Leave a chat room.
-   *
-   * @emits room:left - Notifies the room that a user has left.
-   */
   @WsDoc({
     event: 'room:leave',
     description: 'Leave a chat room.',
-    payload: { room: 'string', username: 'string' },
+    payload: { room: 'string' },
     response: 'room:left',
     type: 'emit',
   })
   @SubscribeMessage('room:leave')
   handleLeaveRoom(
-    @MessageBody() body: { room: string; username: string },
+    @MessageBody() data: { room: string },
     @ConnectedSocket() client: Socket,
-  ): void {
-    client.leave(body.room);
-    this.logger.log(`${body.username} left room → ${body.room}`);
-    this.server.to(body.room).emit('room:left', {
-      room: body.room,
-      username: body.username,
-      message: `${body.username} has left the room.`,
+  ) {
+    const username = this.userNames.get(client.id);
+    client.leave(data.room);
+    this.server.to(data.room).emit('room:left', {
+      username,
+      message: `${username} left the room`,
+      timestamp: new Date().toISOString(),
     });
+    return {
+      status: 'left',
+      room: data.room,
+      timestamp: new Date().toISOString(),
+    };
   }
 
-  /**
-   * Send a private direct message to a specific socket client.
-   *
-   * @emits dm - Delivers the message to the target client only.
-   */
   @WsDoc({
-    event: 'dm',
-    description: 'Send a private direct message to a specific client.',
-    payload: { toClientId: 'string', msg: 'string' },
-    response: 'dm',
+    event: 'dm:send',
+    description: 'Send a direct message to another user.',
+    payload: { toUserId: 'string', text: 'string' },
+    response: 'dm:receive',
     type: 'emit',
   })
-  @SubscribeMessage('dm')
+  @SubscribeMessage('dm:send')
   handleDirectMessage(
-    @MessageBody() body: { toClientId: string; msg: string },
+    @MessageBody() data: { toUserId: string; text: string },
     @ConnectedSocket() client: Socket,
-  ): void {
-    this.logger.log(`DM from ${client.id} → ${body.toClientId}: ${body.msg}`);
-    this.server.to(body.toClientId).emit('dm', {
-      from: client.id,
-      msg: body.msg,
+  ) {
+    const username = this.userNames.get(client.id);
+    this.server.to(data.toUserId).emit('dm:receive', {
+      from: username,
+      text: data.text,
       timestamp: new Date().toISOString(),
     });
-  }
-
-  /**
-   * Broadcast a system-wide notification to all connected clients.
-   *
-   * @emits notification - Delivers the notification to all clients.
-   */
-  @WsDoc({
-    event: 'notification',
-    description: 'Broadcast a system notification to all clients.',
-    payload: { message: 'string', level: 'info | warn | error' },
-    response: 'notification',
-    type: 'emit',
-  })
-  @SubscribeMessage('notification')
-  handleNotification(
-    @MessageBody() body: { message: string; level: string },
-  ): void {
-    this.logger.warn(`System notification [${body.level}]: ${body.message}`);
-    this.server.emit('notification', {
-      message: body.message,
-      level: body.level,
+    return {
+      status: 'sent',
+      toUserId: data.toUserId,
       timestamp: new Date().toISOString(),
-    });
+    };
   }
 
-  // ── Subscribe Events (server → client) ───────────────
-  // These methods exist purely for nestjs-wsgate documentation.
-  // They are never called — the server emits these events directly.
-
-  /**
-   * Received by all clients when a message is broadcast.
-   */
   @WsDoc({
-    event: 'message',
-    description: 'Received by all clients when a message is broadcast.',
-    payload: { msg: 'string' },
+    event: 'message:receive',
+    description: 'Receive a message in a room.',
+    payload: { username: 'string', text: 'string', timestamp: 'string' },
     type: 'subscribe',
   })
-  onMessage(): void {}
+  onMessageReceive() {}
 
-  /**
-   * Received by room members when a new user joins.
-   */
   @WsDoc({
     event: 'room:joined',
-    description: 'Received by room members when a new user joins.',
-    payload: { room: 'string', username: 'string', message: 'string' },
+    description: 'User joined the room.',
+    payload: { username: 'string', message: 'string', timestamp: 'string' },
     type: 'subscribe',
   })
-  onRoomJoined(): void {}
+  onRoomJoined() {}
 
-  /**
-   * Received by room members when a user sends a message.
-   */
-  @WsDoc({
-    event: 'room:message',
-    description: 'Received by room members when a message is sent.',
-    payload: { username: 'string', msg: 'string', timestamp: 'string' },
-    type: 'subscribe',
-  })
-  onRoomMessage(): void {}
-
-  /**
-   * Received by room members when a user leaves.
-   */
   @WsDoc({
     event: 'room:left',
-    description: 'Received by room members when a user leaves.',
-    payload: { room: 'string', username: 'string', message: 'string' },
+    description: 'User left the room.',
+    payload: { username: 'string', message: 'string', timestamp: 'string' },
     type: 'subscribe',
   })
-  onRoomLeft(): void {}
+  onRoomLeft() {}
 
-  /**
-   * Received by the target client when a direct message is sent.
-   */
   @WsDoc({
-    event: 'dm',
-    description: 'Received when someone sends you a direct message.',
-    payload: { from: 'string', msg: 'string', timestamp: 'string' },
+    event: 'dm:receive',
+    description: 'Receive a direct message.',
+    payload: { from: 'string', text: 'string', timestamp: 'string' },
     type: 'subscribe',
   })
-  onDm(): void {}
-
-  /**
-   * Received by all clients when a system notification is broadcast.
-   */
-  @WsDoc({
-    event: 'notification',
-    description:
-      'Received by all clients when a system notification is broadcast.',
-    payload: {
-      message: 'string',
-      level: 'info | warn | error',
-      timestamp: 'string',
-    },
-    type: 'subscribe',
-  })
-  onNotification(): void {}
+  onDirectMessage() {}
 }
