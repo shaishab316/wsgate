@@ -386,7 +386,7 @@ export default function AuthorCard() {
               <img
                 src={user.avatar_url}
                 alt={user.name}
-                className="size-12 rounded-full border-2 border-zinc-950 bg-zinc-900 block"
+                className="size-12 rounded-full border-2 border-zinc-950 bg-zinc-900 block invert dark:invert-0"
               />
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full bg-zinc-950 flex items-center justify-center">

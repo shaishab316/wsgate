@@ -614,7 +614,7 @@ export default function EventPanel() {
                 onClick={handleEmit}
                 disabled={!connected}
                 title={connected ? "Emit event (Ctrl+Enter)" : "Connect first"}
-                className={`relative flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`invert dark:invert-0 relative flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
                   emitSuccess
                     ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
                     : connected
@@ -643,7 +643,7 @@ export default function EventPanel() {
           </div>
 
           {/* ── Monaco editor ── */}
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative invert dark:invert-0">
             <div
               className={`absolute inset-0 rounded-xl overflow-hidden border transition-all duration-200 bg-[#1e1e1e] ${
                 error

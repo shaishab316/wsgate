@@ -17,6 +17,8 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +51,12 @@ export default function Navbar() {
   const [showToken, setShowToken] = useState(false);
   const [urlFocused, setUrlFocused] = useState(false);
   const [tokenFocused, setTokenFocused] = useState(false);
+  const [isDark, setIsDark] = useState(true);
+
+  const toggleTheme = () => {
+    setIsDark((v) => !v);
+    document.documentElement.classList.toggle("dark");
+  };
 
   // ── Debounced store update ───────────────────────────
 
@@ -105,7 +113,11 @@ export default function Navbar() {
     <div className="flex items-center gap-2 px-4 h-14 border-b border-zinc-800 bg-zinc-950 shrink-0">
       {/* ── Logo ── */}
       <div className="flex items-center gap-2 shrink-0 select-none grow">
-        <img src={appIcon} alt="WS Gate Logo" className="size-8" />
+        <img
+          src={appIcon}
+          alt="WS Gate Logo"
+          className="size-8 invert dark:invert-0"
+        />
         <h1
           className="wsg-fadeUp wsg-shimmer text-[22px] font-semibold font-mono tracking-tight"
           style={{ animationDelay: "70ms" }}
@@ -200,12 +212,25 @@ export default function Navbar() {
         </Panel>
       </PanelGroup>
 
+      {/* ── Theme Toggle ── */}
+      <button
+        onClick={toggleTheme}
+        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all duration-200"
+        title="Toggle theme"
+      >
+        {isDark ? (
+          <Sun className="w-3.5 h-3.5" />
+        ) : (
+          <Moon className="w-3.5 h-3.5" />
+        )}
+      </button>
+
       {/* ── Connect / Disconnect button ── */}
       {isConnected ? (
         <Button
           onClick={disconnect}
           size="sm"
-          className="shrink-0 h-9 px-4 gap-2 bg-zinc-800 hover:bg-red-600/20 hover:border-red-500/50 text-zinc-300 hover:text-red-400 border border-zinc-700 rounded-lg transition-all duration-200"
+          className="shrink-0 h-9 px-4 gap-2 bg-zinc-800 hover:bg-red-600/20 hover:border-red-500/50 text-zinc-300 hover:text-red-400 border border-zinc-700 rounded-lg transition-all duration-200 invert dark:invert-0"
         >
           <Unplug className="w-3.5 h-3.5" />
           <span className="text-xs font-medium">Disconnect</span>
@@ -215,7 +240,7 @@ export default function Navbar() {
           onClick={() => connect(url, token, selectedNamespace)}
           disabled={isConnecting || !url}
           size="sm"
-          className="shrink-0 h-9 px-4 gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg shadow-lg shadow-blue-900/30 transition-all duration-200 hover:shadow-blue-800/40"
+          className="shrink-0 h-9 px-4 gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg shadow-lg shadow-blue-900/30 transition-all duration-200 hover:shadow-blue-800/40 invert dark:invert-0"
         >
           {isConnecting ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -239,7 +264,7 @@ export default function Navbar() {
       {/* ── Status badge ── */}
       <Badge
         variant="outline"
-        className={`shrink-0 h-7 px-2.5 gap-1.5 text-xs font-medium rounded-lg transition-all duration-300 ${config.badgeClass}`}
+        className={`shrink-0 h-7 px-2.5 gap-1.5 text-xs font-medium rounded-lg transition-all duration-300 ${config.badgeClass} py-4`}
       >
         {/* animated dot */}
         <span className="relative flex items-center justify-center w-2 h-2 shrink-0">

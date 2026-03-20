@@ -26,7 +26,7 @@ function ResizeHandle() {
       {/* Grip dots */}
       <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-150">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="w-[3px] h-[3px] rounded-full bg-blue-400" />
+          <div key={i} className="size-0.75 rounded-full bg-blue-400" />
         ))}
       </div>
     </PanelResizeHandle>
@@ -50,7 +50,7 @@ function ResizeHandle() {
  */
 export default function App() {
   return (
-    <div className="flex flex-col h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div className="flex flex-col h-screen w-screen invert dark:invert-0 bg-zinc-950 text-zinc-100 overflow-hidden">
       {/* Top navigation bar — connection controls and status */}
       <Navbar />
 

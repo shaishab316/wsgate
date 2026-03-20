@@ -15,7 +15,7 @@ export const JsonViewer = memo(function JsonViewer({
   const highlighted = useMemo(() => highlightJson(safeStringify(data)), [data]);
   return (
     <pre
-      className="text-[11.5px] leading-relaxed font-mono p-3 overflow-x-auto overflow-y-auto max-h-[260px] bg-transparent whitespace-pre-wrap break-words text-zinc-300"
+      className="text-[11.5px] bg-[#1e1e1e] leading-relaxed font-mono p-3 overflow-x-auto overflow-y-auto max-h-65 whitespace-pre-wrap wrap-break-word"
       // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: highlighted }}
     />

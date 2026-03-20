@@ -242,7 +242,11 @@ export default function EmptyState() {
               "0 4px 32px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(99,102,241,0.08)",
           }}
         >
-          <img src={appIcon} alt="nestjs-wsgate logo" className="size-20" />
+          <img
+            src={appIcon}
+            alt="nestjs-wsgate logo"
+            className="size-20 invert dark:invert-0"
+          />
         </div>
         {/* Corner accents */}
         <span className="absolute -top-px -right-px w-4 h-4 border-t border-r border-indigo-500/25 rounded-tr-[18px]" />
