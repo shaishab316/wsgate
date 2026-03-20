@@ -291,7 +291,7 @@ export default function AuthorCard() {
           EXPANDED CARD — grows on hover
           ══════════════════════════════════ */}
       <div
-        className="absolute bottom-0 left-1/2 w-69 rounded-xl border bg-zinc-950 overflow-hidden"
+        className="absolute bottom-0 left-1/2 w-100 rounded-xl border bg-zinc-950 overflow-hidden"
         style={{
           transform: `translateX(-50%) scaleY(${hovered ? 1 : 0}) translateY(0)`,
           transformOrigin: "bottom center",
@@ -321,7 +321,7 @@ export default function AuthorCard() {
           <span className="flex-1 text-center text-[10px] font-mono text-zinc-600">
             shaishab316 — profile.json
           </span>
-          <div className="w-[42px]" />
+          <div className="w-10.5" />
         </div>
 
         {/* Banner */}
