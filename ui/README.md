@@ -1,9 +1,16 @@
 <div align="center">
   <img src="./src/assets/icon.png" width="120px" alt="WSGate UI Logo">
-  <br>
-  <br>
-  <h1>🚀 WSGate UI</h1>
-  <p><em>A Modern WebSocket Gateway Interface</em></p>
+
+# 🚀 WSGate UI
+
+A Modern WebSocket Gateway Interface
+
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-blue)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3+-38B2AC)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](/LICENSE)
+
 </div>
 
 ## Overview
@@ -334,202 +341,18 @@ src/
 
 ---
 
-## Contributing Guide
+## Contributing
 
-### Adding a New Component
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-1. **Create component file** in appropriate directory
+Open an issue before a large PR.
 
-   ```
-   src/components/sub-components/MyComponent.tsx
-   ```
+## License
 
-2. **Add comprehensive JSDoc**
-
-   ````tsx
-   /**
-    * MyComponent — Brief description.
-    *
-    * Detailed explanation of what it does.
-    *
-    * @example
-    * ```tsx
-    * <MyComponent prop="value" />
-    * ```
-    *
-    * @param prop - Description
-    * @returns ReactNode
-    */
-   ````
-
-3. **Use TypeScript** for all props
-
-   ```tsx
-   export function MyComponent({
-     onAction,
-     disabled,
-   }: {
-     onAction: () => void;
-     disabled?: boolean;
-   }) {
-     // ...
-   }
-   ```
-
-4. **Apply Tailwind classes** for consistent styling
-5. **Test with light + dark themes**
-
-### Adding a Utility Function
-
-1. **Add to `src/lib/utils.ts`**
-2. **Include JSDoc with examples**
-3. **Keep it pure** (no side effects)
-4. **Add tests** if complex logic
-
-### Adding a UI Library Shortcut
-
-1. If using a recurring color, style, or pattern, add to `src/components/sub-components/Config.ts`
-2. Example:
-   ```tsx
-   export const TYPE_ICON = {
-     emit: { icon: <Send className="w-3 h-3" />, label: "Emit" },
-     listen: { icon: <Radio className="w-3 h-3" />, label: "Listen" },
-   };
-   ```
-
-### Testing Development
-
-- Run `make` or `pnpm run dev` in the `ui/` directory
-- Connect to a local NestJS WSGate server on `ws://localhost:3000`
-- Emit test events and verify round-trip latency
+See [LICENSE](/LICENSE) for details.
 
 ---
 
-## Common Patterns
-
-### Store Usage
-
-```tsx
-const { selectedEvent, setSelectedEvent } = useWsgateStore();
-
-useEffect(() => {
-  if (selectedEvent) {
-    loadEventSchema(selectedEvent);
-  }
-}, [selectedEvent]);
-```
-
-### Token Security
-
-- Token is **never exposed in logs** (masked in UI)
-- Stored in `localStorage` under key `wsgate:token`
-- **Not sent to analytics** or external services
-
-### Icon Buttons
-
-```tsx
-<CopyButton text={payload} />  // Tooltip + automatic Copy → Check animation
-
-<IconBtn
-  title="Export"
-  onClick={handleExport}
-  activeClass="text-blue-400"
->
-  <Download className="w-4 h-4" />
-</IconBtn>
-```
-
-### Accessible Interactive Elements
-
-All clickable elements must be either:
-
-- Native `<button>` elements
-- Non-button divs with `role="button"`, `tabIndex={0}`, `onKeyDown` handler
-
-Example:
-
-```tsx
-<div
-  role="button"
-  tabIndex={0}
-  onClick={onToggle}
-  onKeyDown={(e) => {
-    if (e.key === "Enter" || e.key === " ") onToggle();
-  }}
-  className="cursor-pointer"
->
-  Click me
+<div align="center">
+  <b>If this saved you from writing another throwaway test client, drop a ⭐</b>
 </div>
-```
-
----
-
-## Performance Optimizations
-
-### Why `<pre>` Instead of Monaco in Logs?
-
-Monaco Editor requires explicit pixel height. With dynamic content, calculating height is unreliable:
-
-- ResizeObserver is slow
-- Line height × line count = wrong on wrap
-- Results in clipping/cutting off content
-
-**Solution**: Use `<pre>` with syntax highlighting via `highlightJson()`:
-
-- Height = content height exactly
-- ~100× smaller bundle size
-- Instant rendering for 200+ log entries
-
-### Memoization
-
-```tsx
-const payload = useMemo(() => buildPayloadSkeleton(...), [selected]);
-```
-
-Used sparingly for expensive calculations.
-
-### Debouncing
-
-```tsx
-const debouncedSave = useCallback(
-  debounce((val) => saveToStorage(key, val), 500),
-  [key],
-);
-```
-
----
-
-## Troubleshooting
-
-### "Cannot find module '@react-hookz/web'"
-
-→ Don't add external dependencies. Use native hooks + custom `useMediaQuery()`
-
-### Monaco editor runs but shows blank panel
-
-→ Check `editorReady` state. There's a 300ms delay to reset on event change.
-
-### Logs keep appearing after disconnect
-
-→ Make sure `useSocketStore` clears `onMessageCallback` on disconnect.
-
-### Light theme colors look wrong
-
-→ Edit `dark:` annotations in Tailwind classes. Use `bg-white dark:bg-zinc-950` pattern.
-
----
-
-## Next Steps for Contributors
-
-1. **Review existing components** to understand patterns
-2. **Read JSDoc comments** before modifying
-3. **Run locally** with a test WebSocket server
-4. **Create PR** with clear description of changes
-5. **Include tests** for new utilities/logic
-6. **Update this document** if architecture changes
-
----
-
-**Last Updated**: March 20, 2026  
-**Maintainer**: @shaishab316  
-**License**: MIT
