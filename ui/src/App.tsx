@@ -58,14 +58,14 @@ export default function App() {
       <PanelGroup
         direction="horizontal"
         autoSaveId="wsgate-layout"
-        className="flex-1 overflow-hidden"
+        className="flex-1 min-h-0" /* min-h-0 so PanelGroup itself can shrink */
       >
         {/* Left — discovered event list */}
         <Panel
           defaultSize={18}
           minSize={12}
           maxSize={30}
-          className="flex flex-col border-r border-zinc-800"
+          className="flex flex-col overflow-hidden border-r border-zinc-800"
         >
           <Sidebar />
         </Panel>
@@ -76,7 +76,7 @@ export default function App() {
         <Panel
           defaultSize={52}
           minSize={30}
-          className="flex flex-col border-r border-zinc-800 overflow-y-auto"
+          className="flex flex-col overflow-hidden border-r border-zinc-800"
         >
           <EventPanel />
         </Panel>
@@ -88,7 +88,7 @@ export default function App() {
           defaultSize={30}
           minSize={18}
           maxSize={45}
-          className="flex flex-col"
+          className="flex flex-col overflow-hidden"
         >
           <EventLog />
         </Panel>
