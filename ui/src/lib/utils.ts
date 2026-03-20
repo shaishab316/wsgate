@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { TYPE_ICON } from "@/components/Config";
+import { TYPE_ICON } from "@/components/sub-components/Config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
