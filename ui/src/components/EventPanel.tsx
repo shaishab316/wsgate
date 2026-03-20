@@ -62,6 +62,45 @@ import { AckPanel } from "./sub-components/AckPanel";
 import { EditorShimmer } from "./shimmer/EditorShimmer";
 import { EmitError } from "./sub-components/EmitError";
 
+/**
+ * EventPanel component for emitting and managing WebSocket events.
+ *
+ * Provides a comprehensive interface for:
+ * - Editing and emitting event payloads with Monaco editor
+ * - Managing event history and presets
+ * - Faker variable insertion for dynamic payload generation
+ * - Real-time JSON validation with Monaco schemas
+ * - Multi-emit support with configurable delays
+ * - Acknowledgment tracking for emit responses
+ * - Code generation for client implementations
+ *
+ * @component
+ * @example
+ * // Displays empty state if no event selected
+ * <EventPanel />
+ *
+ * @returns {React.ReactElement | null} The EventPanel UI with editor, controls, and status displays.
+ *   Returns `<EmptyState />` if no event is selected.
+ *   Returns `<PanelShimmer />` while editor is initializing.
+ *   Returns subscribe view for listen-only events.
+ *   Returns full emit interface for emittable events.
+ *
+ * @remarks
+ * - Uses Monaco Editor for JSON payload editing with schema validation
+ * - Stores emit history and presets in browser localStorage per event
+ * - Supports Ctrl+Enter keyboard shortcut for quick emit
+ * - Automatically formats JSON on mount and after restoration
+ * - Provides completion hints for faker variables ({{$var}})
+ * - Tracks emit count and shows success feedback with 1.5s animation
+ * - Auto-disconnects if event namespace doesn't match selected namespace
+ * - Handles ack callbacks and timeout detection (3s) for multi-emit
+ *
+ * @dependencies
+ * - `useWsgateStore` - Event selection, logging, and connection state
+ * - `useSocketStore` - WebSocket emit and status management
+ * - `useMonaco` - Monaco editor instance
+ * - Monaco Editor (@monaco-editor/react)
+ */
 export default function EventPanel() {
   const {
     selectedEvent,

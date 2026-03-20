@@ -40,6 +40,41 @@ import { BufferBar } from "./sub-components/BufferBar";
 type DirectionFilter = "all" | "in" | "out";
 type TimestampMode = "absolute" | "relative";
 
+/**
+ * EventLog component for displaying and managing WebSocket gateway events.
+ *
+ * Provides comprehensive event logging with features including:
+ * - Live/paused mode for event stream capture
+ * - Real-time regex filtering with debouncing
+ * - Directional filtering (incoming/outgoing/all)
+ * - Event pinning and expansion controls
+ * - Auto-scroll with lock functionality
+ * - Absolute/relative timestamp display modes
+ * - Event export and clear operations
+ * - Event counter statistics
+ *
+ * @component
+ *
+ * @state {Log[]} displayLogs - Currently displayed logs (live or paused snapshot)
+ * @state {boolean} paused - Whether the event stream is paused
+ * @state {number} pendingCount - Number of new events while paused
+ * @state {Set<number>} expanded - IDs of expanded log entries
+ * @state {Set<number>} expandedAck - IDs of expanded acknowledgment details
+ * @state {Set<number>} pinnedIds - IDs of pinned log entries
+ * @state {string} filterInput - Current filter input value
+ * @state {DirectionFilter} direction - Filter direction ("all", "in", "out")
+ * @state {boolean} searchFocus - Whether search input has focus
+ * @state {boolean} autoScroll - Whether to auto-scroll to latest entry
+ * @state {TimestampMode} tsMode - Timestamp display mode ("absolute" or "relative")
+ * @state {boolean} exportOpen - Whether export menu is open
+ *
+ * @example
+ * ```tsx
+ * <EventLog />
+ * ```
+ *
+ * @returns {JSX.Element} The event log UI container with header, filters, and log entries
+ */
 export default function EventLog() {
   const { logs: storeLogs, clearLogs } = useWsgateStore();
 

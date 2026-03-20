@@ -28,20 +28,31 @@ import { GatewayHeader } from "./sub-components/GatewayHeader";
 import { EventRow } from "./sub-components/EventRow";
 
 /**
- * Left sidebar panel for the nestjs-wsgate UI.
+ * Sidebar component for the WebSocket Gateway UI.
  *
- * Fetches discovered `@WsDoc()` events from `{url}/wsgate/events.json`.
- * Shows a shimmer skeleton while loading and a detailed error
- * state with retry on failure.
+ * Displays a hierarchical list of WebSocket events organized by namespace and gateway.
+ * Provides search, filtering, and namespace selection capabilities.
  *
- * Features:
- * - Live search filter across event names and descriptions
- * - Events grouped by gateway name with collapsible sections
- * - Emit vs Subscribe badge with matching icon
- * - Total event count in header
- * - Editable URL in error state — does NOT touch socket connection
+ * @component
  *
- * Selected event is persisted via Zustand store.
+ * @returns {JSX.Element} The rendered sidebar with:
+ *   - Header showing title and connection status
+ *   - Search input with keyboard shortcuts (Ctrl+K)
+ *   - Namespace filter bar for multi-namespace filtering
+ *   - Grouped event list (namespace → gateway → events)
+ *   - Footer with event type statistics and active namespace indicator
+ *
+ * @example
+ * ```tsx
+ * <Sidebar />
+ * ```
+ *
+ * @remarks
+ * - Events are fetched from `{targetUrl}/wsgate/events.json`
+ * - Selecting an event in a different namespace automatically disconnects the socket
+ * - Sections (namespaces and gateways) can be collapsed/expanded
+ * - Search filters events in real-time across all fields
+ * - Keyboard shortcuts: Ctrl+K to focus search, Escape to clear search
  */
 export default function Sidebar() {
   // ── Stores ────────────────────────────────────────────

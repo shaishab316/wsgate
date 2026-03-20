@@ -35,6 +35,40 @@ export type SelectedEvent = NonNullable<WsgateState["selectedEvent"]>;
 
 export type Log = WsgateState["logs"][number];
 
+/**
+ * Zustand store for managing WebSocket Gateway state and operations.
+ *
+ * @remarks
+ * This store manages both persisted and volatile state for a WebSocket Gateway client.
+ * Persisted state includes URL, token, selected event, and namespace preferences.
+ * Volatile state includes logs and available namespaces.
+ *
+ * @example
+ * ```typescript
+ * const store = useWsgateStore();
+ * store.setUrl("http://example.com:3000");
+ * store.addLog("in", "message", { content: "Hello" });
+ * ```
+ *
+ * @returns {WsgateState} The Zustand store with state properties and action methods
+ *
+ * @property {string} url - WebSocket server URL (from query params or default localhost:3000)
+ * @property {string} token - Authentication token for WebSocket connections
+ * @property {SelectedEvent | null} selectedEvent - Currently selected event for inspection
+ * @property {string} selectedNamespace - Currently selected namespace (default: "/")
+ * @property {Log[]} logs - Array of all logged messages and events (volatile, non-persisted)
+ * @property {number} logId - Auto-incrementing counter for log entry IDs
+ * @property {string[]} availableNamespaces - List of discovered namespaces (volatile, non-persisted)
+ *
+ * @method setUrl - Update the WebSocket server URL
+ * @method setToken - Update the authentication token
+ * @method setSelectedEvent - Update the selected event and optionally its namespace
+ * @method setSelectedNamespace - Update the selected namespace
+ * @method setAvailableNamespaces - Update the list of available namespaces
+ * @method addLog - Add a new log entry and return its ID
+ * @method addAck - Add acknowledgment data to an existing log entry
+ * @method clearLogs - Clear all log entries
+ */
 export const useWsgateStore = create<WsgateState>()(
   persist(
     (set, get) => ({
