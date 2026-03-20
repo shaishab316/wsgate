@@ -10,7 +10,7 @@
  *             reveals section-by-section with staggered fade-up
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import {
   Github,
   BookOpen,
@@ -522,9 +522,8 @@ export default function AuthorCard() {
         {/* Link row */}
         <div className="ac-reveal flex" style={{ animationDelay: "320ms" }}>
           {LINKS.map((link, i) => (
-            <>
+            <Fragment key={link.label}>
               <a
-                key={link.label}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -535,10 +534,8 @@ export default function AuthorCard() {
                 </span>
                 {link.label}
               </a>
-              {i < LINKS.length - 1 && (
-                <div key={`div-${i}`} className="w-px bg-zinc-800/60" />
-              )}
-            </>
+              {i < LINKS.length - 1 && <div className="w-px bg-zinc-800/60" />}
+            </Fragment>
           ))}
         </div>
       </div>

@@ -31,9 +31,16 @@ export function EventRow({
   };
 
   return (
-    <button
+    <div
       onClick={onSelect}
-      className={`w-full text-left px-3 py-2.5 rounded-lg flex flex-col gap-1 transition-all duration-150 mb-0.5 group border ${
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          onSelect();
+        }
+      }}
+      className={`w-full text-left px-3 py-2.5 rounded-lg flex flex-col gap-1 transition-all duration-150 mb-0.5 group border cursor-pointer ${
         isSelected
           ? "bg-blue-500/10 border-blue-500/30 shadow-[0_0_0_1px_rgba(59,130,246,0.1)]"
           : "border-transparent hover:bg-zinc-800/60 hover:border-zinc-700/50"
@@ -110,6 +117,6 @@ export function EventRow({
           {event.description}
         </span>
       )}
-    </button>
+    </div>
   );
 }

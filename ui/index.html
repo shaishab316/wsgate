@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WS Gate | Web Socket Explorer</title>
+    <script>
+      //? Suppress harmless Monaco Editor cancellation errors during cleanup
+      window.addEventListener("unhandledrejection", (event) => {
+        if (
+          event.reason?.type === "cancelation" &&
+          event.reason?.msg === "operation is manually canceled"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
