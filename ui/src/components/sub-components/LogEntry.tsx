@@ -82,6 +82,11 @@ export const LogEntry = memo(function LogEntry({
     >
       {/* Row */}
       <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onToggle();
+        }}
         className="flex items-center gap-2 px-3 py-2.5 cursor-pointer"
         onClick={onToggle}
       >

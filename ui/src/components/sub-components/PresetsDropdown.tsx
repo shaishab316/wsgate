@@ -90,6 +90,8 @@ export function PresetsDropdown({
               </button>
               <button
                 onClick={() => onDelete(p.id)}
+                title="Delete preset"
+                aria-label="Delete preset"
                 className="text-zinc-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
               >
                 <Trash2 className="w-3 h-3" />

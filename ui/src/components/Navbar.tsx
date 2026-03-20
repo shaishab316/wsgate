@@ -198,6 +198,8 @@ export default function Navbar() {
             {token && (
               <button
                 onClick={() => setShowToken((v) => !v)}
+                title={showToken ? "Hide token" : "Show token"}
+                aria-label={showToken ? "Hide token" : "Show token"}
                 className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
                 tabIndex={-1}
               >
