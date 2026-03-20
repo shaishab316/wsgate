@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { TYPE_ICON } from "@/components/Config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -74,4 +75,10 @@ export function relativeTime(iso: string): string {
   if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   return `${Math.floor(diff / 3_600_000)}h ago`;
+}
+
+export function getTypeConfig(type: string) {
+  const t = type.trim();
+  if (t.includes("|")) return TYPE_ICON.enum;
+  return TYPE_ICON[t] ?? TYPE_ICON.default;
 }
