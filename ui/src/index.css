@@ -160,3 +160,25 @@
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+@keyframes _ac_fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes _ac_scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(300%);
+  }
+}
+.ac-reveal {
+  animation: _ac_fadeSlideUp 0.3s ease both;
+}

@@ -267,11 +267,12 @@ export default function Navbar() {
       {/* ── Logo ── */}
       <div className="flex items-center gap-2 shrink-0 select-none grow">
         <img src={appIcon} alt="WS Gate Logo" className="size-8" />
-        <div className="flex flex-col leading-none">
-          <span className="text-lg font-bold text-zinc-100 tracking-tight">
-            WS Gate
-          </span>
-        </div>
+        <h1
+          className="wsg-fadeUp wsg-shimmer text-[22px] font-semibold font-mono tracking-tight"
+          style={{ animationDelay: "70ms" }}
+        >
+          wsgate
+        </h1>
       </div>
 
       {/* ── Resizable URL + Token ── */}

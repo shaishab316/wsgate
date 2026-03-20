@@ -39,6 +39,8 @@ import {
   Clock,
   Trash2,
   Tag,
+  Sparkles,
+  FlaskConical,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Editor, { useMonaco, type OnMount } from "@monaco-editor/react";
@@ -47,20 +49,17 @@ import { useWsgateStore, type SelectedEvent } from "@/store/wsgate.store";
 import { useSocketStore } from "@/hooks/useSocket";
 import CodeGenPanel from "@/components/CodeGenPanel";
 import ShortcutHint from "@/components/ShortcutHint";
+import EmptyState from "./EmptyState";
 
 // ── Types ──────────────────────────────────────────────
 
-/** A single entry in the per-event payload history ring buffer. */
 interface HistoryEntry {
   id: string;
   payload: string;
-  /** ISO timestamp of when the emit happened. */
   sentAt: string;
-  /** Snapshot of the event name — so history survives event renames in dev. */
   event: string;
 }
 
-/** A user-saved, named payload preset. */
 interface Preset {
   id: string;
   name: string;
@@ -68,7 +67,6 @@ interface Preset {
   createdAt: string;
 }
 
-/** Result from a single emit inside a multi-emit run. */
 interface MultiEmitResult {
   index: number;
   ack: unknown;
@@ -76,20 +74,369 @@ interface MultiEmitResult {
   ok: boolean;
 }
 
+// ── Faker Variables ───────────────────────────────────
+
+/**
+ * Faker variable definitions.
+ * Each entry has: a resolver fn, the resolved type, and a human description.
+ * Syntax: {{$variableName}} inside any JSON string value.
+ *
+ * Type-aware resolution — number/boolean vars resolve to unquoted JSON literals.
+ * e.g.  "age": "{{$randomInt}}"  →  "age": 42
+ *       "name": "{{$firstName}}"  →  "name": "Alice"
+ */
+interface FakerVarDef {
+  resolve: () => unknown;
+  type: "string" | "number" | "boolean" | "uuid";
+  description: string;
+  example: string;
+}
+
+// ── Static word banks (no external dep) ──────────────
+
+const _FIRST = [
+  "Alice",
+  "Bob",
+  "Carol",
+  "Dave",
+  "Eva",
+  "Frank",
+  "Grace",
+  "Henry",
+  "Iris",
+  "Jack",
+  "Kate",
+  "Liam",
+  "Mia",
+  "Noah",
+  "Olivia",
+  "Paul",
+  "Quinn",
+  "Rosa",
+  "Sam",
+  "Tina",
+];
+const _LAST = [
+  "Smith",
+  "Johnson",
+  "Williams",
+  "Brown",
+  "Jones",
+  "Garcia",
+  "Miller",
+  "Davis",
+  "Wilson",
+  "Moore",
+  "Taylor",
+  "Anderson",
+  "Thomas",
+  "Jackson",
+  "White",
+  "Harris",
+  "Martin",
+  "Thompson",
+];
+const _WORDS = [
+  "alpha",
+  "beta",
+  "gamma",
+  "delta",
+  "echo",
+  "foxtrot",
+  "hotel",
+  "india",
+  "juliet",
+  "kilo",
+  "lima",
+  "mike",
+  "november",
+  "oscar",
+  "papa",
+  "quebec",
+  "romeo",
+  "sierra",
+  "tango",
+  "uniform",
+];
+const _DOMAINS = [
+  "example.com",
+  "mail.io",
+  "test.dev",
+  "inbox.net",
+  "demo.org",
+];
+const _TLDS = ["com", "io", "dev", "net", "org", "co"];
+const _LOCALES = [
+  "en-US",
+  "en-GB",
+  "fr-FR",
+  "de-DE",
+  "ja-JP",
+  "pt-BR",
+  "es-ES",
+  "zh-CN",
+];
+const _COLORS = [
+  "red",
+  "blue",
+  "green",
+  "yellow",
+  "purple",
+  "orange",
+  "teal",
+  "pink",
+  "indigo",
+  "cyan",
+];
+const _STATUS = ["active", "inactive", "pending", "suspended", "verified"];
+const _ROLES = ["admin", "user", "moderator", "editor", "viewer", "superadmin"];
+
+function _pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function _int(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function _uuid() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
+export const FAKER_VARS: Record<string, FakerVarDef> = {
+  $randomFirstName: {
+    resolve: () => _pick(_FIRST),
+    type: "string",
+    description: "Random first name",
+    example: "Alice",
+  },
+  $randomLastName: {
+    resolve: () => _pick(_LAST),
+    type: "string",
+    description: "Random last name",
+    example: "Smith",
+  },
+  $randomFullName: {
+    resolve: () => `${_pick(_FIRST)} ${_pick(_LAST)}`,
+    type: "string",
+    description: "Full name",
+    example: "Alice Smith",
+  },
+  $randomEmail: {
+    resolve: () =>
+      `${_pick(_FIRST).toLowerCase()}.${_pick(_LAST).toLowerCase()}${_int(1, 99)}@${_pick(_DOMAINS)}`,
+    type: "string",
+    description: "Random email address",
+    example: "alice.smith42@example.com",
+  },
+  $randomUsername: {
+    resolve: () => `${_pick(_FIRST).toLowerCase()}${_int(10, 999)}`,
+    type: "string",
+    description: "Random username",
+    example: "alice247",
+  },
+  $randomPassword: {
+    resolve: () =>
+      Array.from(
+        { length: 12 },
+        () =>
+          "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%"[
+            _int(0, 66)
+          ],
+      ).join(""),
+    type: "string",
+    description: "Random 12-char password",
+    example: "aB3!xYqZ9kP2",
+  },
+  $randomUUID: {
+    resolve: _uuid,
+    type: "uuid",
+    description: "Random UUID v4",
+    example: "110e8400-e29b-41d4-a716-446655440000",
+  },
+  $randomInt: {
+    resolve: () => _int(1, 9999),
+    type: "number",
+    description: "Random integer 1–9999",
+    example: "4271",
+  },
+  $randomFloat: {
+    resolve: () => parseFloat((Math.random() * 1000).toFixed(2)),
+    type: "number",
+    description: "Random float",
+    example: "347.85",
+  },
+  $randomBoolean: {
+    resolve: () => Math.random() > 0.5,
+    type: "boolean",
+    description: "Random true/false",
+    example: "true",
+  },
+  $timestamp: {
+    resolve: () => Date.now(),
+    type: "number",
+    description: "Current Unix ms timestamp",
+    example: "1711012345678",
+  },
+  $isoTimestamp: {
+    resolve: () => new Date().toISOString(),
+    type: "string",
+    description: "Current ISO 8601 date-time",
+    example: "2026-03-20T14:30:00.000Z",
+  },
+  $randomWord: {
+    resolve: () => _pick(_WORDS),
+    type: "string",
+    description: "Random NATO phonetic word",
+    example: "alpha",
+  },
+  $randomSlug: {
+    resolve: () => `${_pick(_WORDS)}-${_pick(_WORDS)}-${_int(10, 99)}`,
+    type: "string",
+    description: "URL-friendly slug",
+    example: "alpha-bravo-42",
+  },
+  $randomDomain: {
+    resolve: () => `${_pick(_WORDS)}.${_pick(_TLDS)}`,
+    type: "string",
+    description: "Random domain",
+    example: "echo.dev",
+  },
+  $randomUrl: {
+    resolve: () => `https://${_pick(_WORDS)}.${_pick(_TLDS)}/${_pick(_WORDS)}`,
+    type: "string",
+    description: "Random URL",
+    example: "https://alpha.io/beta",
+  },
+  $randomColor: {
+    resolve: () => _pick(_COLORS),
+    type: "string",
+    description: "Random color name",
+    example: "teal",
+  },
+  $randomHexColor: {
+    resolve: () => `#${_int(0, 0xffffff).toString(16).padStart(6, "0")}`,
+    type: "string",
+    description: "Random hex color",
+    example: "#a3f2c1",
+  },
+  $randomStatus: {
+    resolve: () => _pick(_STATUS),
+    type: "string",
+    description: "Random status value",
+    example: "active",
+  },
+  $randomRole: {
+    resolve: () => _pick(_ROLES),
+    type: "string",
+    description: "Random role",
+    example: "editor",
+  },
+  $randomLocale: {
+    resolve: () => _pick(_LOCALES),
+    type: "string",
+    description: "Random locale code",
+    example: "en-US",
+  },
+  $randomIP: {
+    resolve: () =>
+      `${_int(1, 254)}.${_int(0, 254)}.${_int(0, 254)}.${_int(1, 254)}`,
+    type: "string",
+    description: "Random IPv4 address",
+    example: "192.168.4.21",
+  },
+  $randomPort: {
+    resolve: () => _int(1024, 65535),
+    type: "number",
+    description: "Random port number",
+    example: "8432",
+  },
+  $randomVersion: {
+    resolve: () => `${_int(0, 5)}.${_int(0, 20)}.${_int(0, 100)}`,
+    type: "string",
+    description: "Random semver string",
+    example: "2.7.14",
+  },
+};
+
+/**
+ * Resolves all `{{$varName}}` placeholders in a raw JSON string.
+ *
+ * TYPE-AWARE: When the entire JSON value is a faker placeholder
+ * (i.e. `"{{$randomInt}}"`) the surrounding quotes are removed
+ * so numbers and booleans land as their correct JSON types.
+ *
+ * Mixed strings like `"user-{{$randomInt}}"` always resolve as strings.
+ */
+export function resolveFakerVars(jsonStr: string): string {
+  // Pass 1 — pure-value replacements (the whole string value IS one var)
+  // "{{$randomInt}}" → 42  (unquoted — correct JSON type)
+  let result = jsonStr.replace(
+    /"(\{\{(\$[^}]+)\}\})"/g,
+    (match, _full, varName) => {
+      const def = FAKER_VARS[varName];
+      if (!def) return match;
+      const value = def.resolve();
+      if (typeof value === "string") return JSON.stringify(value);
+      // number / boolean → unquoted literal
+      return JSON.stringify(value);
+    },
+  );
+
+  // Pass 2 — interpolated replacements inside a larger string
+  // "Hello {{$randomFirstName}}, your ID is {{$randomInt}}"
+  // → always a string, vars become their string representation
+  result = result.replace(/\{\{(\$[^}]+)\}\}/g, (match, varName) => {
+    const def = FAKER_VARS[varName];
+    if (!def) return match;
+    return String(def.resolve());
+  });
+
+  return result;
+}
+
+/** Returns true if a string contains any faker placeholder. */
+function hasFakerVars(jsonStr: string): boolean {
+  return /\{\{\$[^}]+\}\}/.test(jsonStr);
+}
+
+// ── Faker completion items for Monaco ─────────────────
+
+/**
+ * Builds Monaco CompletionItem list from FAKER_VARS.
+ * Registered as a JSON language provider — triggered on `{` and Ctrl+Space.
+ */
+function buildFakerCompletions(
+  monaco: typeof MonacoType,
+  range: MonacoType.IRange,
+): MonacoType.languages.CompletionItem[] {
+  return Object.entries(FAKER_VARS).map(([name, def]) => ({
+    label: `{{${name}}}`,
+    kind: monaco.languages.CompletionItemKind.Variable,
+    detail: `faker · ${def.type}`,
+    documentation: {
+      value: `**${def.description}**\n\nExample: \`${def.example}\`\n\nType: \`${def.type}\``,
+    },
+    insertText: `{{${name}}}`,
+    filterText: name,
+    sortText: name,
+    range,
+  }));
+}
+
 // ── Helpers ───────────────────────────────────────────
 
 function resolveJsonType(type: string): object {
   const trimmed = type.trim();
-  if (trimmed.includes("|")) {
+  if (trimmed.includes("|"))
     return { enum: trimmed.split("|").map((t) => t.trim()) };
-  }
   switch (trimmed) {
     case "number":
     case "integer":
       return { type: "number" };
     case "boolean":
       return { type: "boolean" };
-    case "string":
     default:
       return { type: "string" };
   }
@@ -109,7 +456,6 @@ function buildPayloadSkeleton(
   );
 }
 
-/** Safe JSON parse — returns null on failure. */
 function tryParseJson(raw: string): unknown | null {
   try {
     return JSON.parse(raw);
@@ -118,12 +464,10 @@ function tryParseJson(raw: string): unknown | null {
   }
 }
 
-/** Stable key for localStorage / preset storage per-event. */
 function storageKey(eventName: string, suffix: string) {
   return `wsgate:${eventName}:${suffix}`;
 }
 
-/** Load JSON from localStorage, returning the fallback on failure. */
 function loadFromStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -138,16 +482,14 @@ function saveToStorage(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    /* quota exceeded — swallow */
+    /* quota */
   }
 }
 
-/** Generate a short, unique-enough ID (no uuid dep needed). */
 function shortId() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-/** Relative time string — "just now", "2m ago", etc. */
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < 5_000) return "just now";
@@ -156,10 +498,9 @@ function relativeTime(iso: string): string {
   return `${Math.floor(diff / 3_600_000)}h ago`;
 }
 
-/** Max entries kept in history per event. */
 const HISTORY_LIMIT = 8;
 
-// ── Constants ─────────────────────────────────────────
+// ── Editor constants ──────────────────────────────────
 
 const BASE_EDITOR_OPTIONS = {
   minimap: { enabled: false },
@@ -195,7 +536,7 @@ const TYPE_ICON: Record<string, { icon: React.ReactNode; color: string }> = {
   },
   boolean: {
     icon: <ToggleLeft className="w-2.5 h-2.5" />,
-    color: "text-pink-400  border-pink-500/30   bg-pink-500/5",
+    color: "text-pink-400   border-pink-500/30   bg-pink-500/5",
   },
   enum: {
     icon: <List className="w-2.5 h-2.5" />,
@@ -293,7 +634,6 @@ function EventHeader({ event }: { event: SelectedEvent }) {
     event.namespace === "/"
       ? "Global"
       : (event.namespace?.slice(1).toUpperCase() ?? "GLOBAL");
-
   return (
     <div className="flex flex-col gap-3 pb-4 border-b border-zinc-800/80 shrink-0">
       <div className="flex items-center gap-2">
@@ -305,11 +645,7 @@ function EventHeader({ event }: { event: SelectedEvent }) {
       <div className="flex items-start gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${
-              isEmit
-                ? "bg-blue-500/15 border border-blue-500/30"
-                : "bg-emerald-500/15 border border-emerald-500/30"
-            }`}
+            className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${isEmit ? "bg-blue-500/15 border border-blue-500/30" : "bg-emerald-500/15 border border-emerald-500/30"}`}
           >
             {isEmit ? (
               <Send className="w-4 h-4 text-blue-400" />
@@ -328,11 +664,7 @@ function EventHeader({ event }: { event: SelectedEvent }) {
         </div>
         <Badge
           variant="outline"
-          className={`shrink-0 text-xs gap-1 ${
-            isEmit
-              ? "border-blue-500/40 text-blue-400 bg-blue-500/5"
-              : "border-emerald-500/40 text-emerald-400 bg-emerald-500/5"
-          }`}
+          className={`shrink-0 text-xs gap-1 ${isEmit ? "border-blue-500/40 text-blue-400 bg-blue-500/5" : "border-emerald-500/40 text-emerald-400 bg-emerald-500/5"}`}
         >
           {isEmit ? (
             <Send className="w-2.5 h-2.5" />
@@ -431,22 +763,15 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-// ── NEW: Live JSON Validity Badge ─────────────────────
-
-/**
- * Tiny inline badge showing whether the current editor content is valid JSON.
- * Positioned in the toolbar label row so developers see it without eye travel.
- */
 function JsonValidityBadge({ payload }: { payload: string }) {
-  const isValid = useMemo(() => tryParseJson(payload) !== null, [payload]);
+  const isValid = useMemo(
+    () => tryParseJson(resolveFakerVars(payload)) !== null,
+    [payload],
+  );
   if (!payload.trim()) return null;
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[9px] font-mono font-semibold rounded-md px-1.5 py-0.5 border transition-all duration-200 ${
-        isValid
-          ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/8"
-          : "text-red-400 border-red-500/25 bg-red-500/8"
-      }`}
+      className={`inline-flex items-center gap-1 text-[9px] font-mono font-semibold rounded-md px-1.5 py-0.5 border transition-all duration-200 ${isValid ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/8" : "text-red-400 border-red-500/25 bg-red-500/8"}`}
     >
       <CircleDot className="w-2 h-2" />
       {isValid ? "Valid" : "Invalid"}
@@ -454,12 +779,6 @@ function JsonValidityBadge({ payload }: { payload: string }) {
   );
 }
 
-// ── NEW: Modified Badge ───────────────────────────────
-
-/**
- * Shows a subtle "modified" indicator when the current payload
- * differs from the auto-generated skeleton.
- */
 function ModifiedBadge({
   payload,
   skeleton,
@@ -477,7 +796,6 @@ function ModifiedBadge({
       return true;
     }
   }, [payload, skeleton]);
-
   if (!isModified) return null;
   return (
     <span className="inline-flex items-center gap-1 text-[9px] font-mono text-zinc-500 border border-zinc-700/50 rounded-md px-1.5 py-0.5 bg-zinc-800/50">
@@ -487,12 +805,156 @@ function ModifiedBadge({
   );
 }
 
-// ── NEW: Payload History Dropdown ─────────────────────
+// ── NEW: Faker vars indicator badge ───────────────────
+
+function FakerBadge({ payload }: { payload: string }) {
+  if (!hasFakerVars(payload)) return null;
+  const count = (payload.match(/\{\{\$[^}]+\}\}/g) ?? []).length;
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-mono font-semibold rounded-md px-1.5 py-0.5 border text-violet-400 border-violet-500/30 bg-violet-500/8 animate-pulse">
+      <Sparkles className="w-2 h-2" />
+      {count} faker var{count !== 1 ? "s" : ""}
+    </span>
+  );
+}
+
+// ── NEW: Faker Variables Reference Panel ──────────────
 
 /**
- * Dropdown panel listing the last N sent payloads for this event.
- * Clicking a row restores it into the editor.
+ * Slide-in reference panel listing all available {{$var}} tokens.
+ * Clicking a variable inserts it into the editor at cursor, or
+ * copies it to clipboard if no editor ref is available.
  */
+function FakerVarsPanel({
+  onInsert,
+  onClose,
+}: {
+  onInsert: (snippet: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const typeGroups = useMemo(() => {
+    const filtered = Object.entries(FAKER_VARS).filter(([name, def]) => {
+      if (!search) return true;
+      return (
+        name.toLowerCase().includes(search.toLowerCase()) ||
+        def.description.toLowerCase().includes(search.toLowerCase())
+      );
+    });
+    const groups: Record<string, [string, FakerVarDef][]> = {};
+    for (const [name, def] of filtered) {
+      const g = def.type;
+      if (!groups[g]) groups[g] = [];
+      groups[g].push([name, def]);
+    }
+    return groups;
+  }, [search]);
+
+  const typeColor: Record<string, string> = {
+    string: "text-amber-400  border-amber-500/25  bg-amber-500/8",
+    number: "text-purple-400 border-purple-500/25 bg-purple-500/8",
+    boolean: "text-pink-400   border-pink-500/25   bg-pink-500/8",
+    uuid: "text-cyan-400   border-cyan-500/25   bg-cyan-500/8",
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-1.5 w-80 z-50 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/70 overflow-hidden flex flex-col"
+      style={{ maxHeight: "420px" }}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-zinc-800/80 shrink-0">
+        <Sparkles className="w-3 h-3 text-violet-400" />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 flex-1">
+          Faker Variables
+        </span>
+        <span className="text-[9px] text-zinc-600 font-mono">
+          Ctrl+Space in editor
+        </span>
+      </div>
+
+      {/* Search */}
+      <div className="px-3 py-2 border-b border-zinc-800/50 shrink-0">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search variables…"
+          className="w-full text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors"
+          autoFocus
+        />
+      </div>
+
+      {/* Variable list */}
+      <div className="overflow-y-auto flex-1 [scrollbar-width:thin] [scrollbar-color:rgba(113,119,144,0.4)_transparent]">
+        {Object.entries(typeGroups).map(([type, vars]) => (
+          <div key={type}>
+            <div className="flex items-center gap-2 px-3 py-1.5 sticky top-0 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/30">
+              <span
+                className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${typeColor[type] ?? "text-zinc-500 border-zinc-700"}`}
+              >
+                {type}
+              </span>
+            </div>
+            {vars.map(([name, def]) => (
+              <button
+                key={name}
+                onClick={() => {
+                  onInsert(`{{${name}}}`);
+                  onClose();
+                }}
+                className="w-full flex items-start gap-2.5 px-3 py-2 hover:bg-zinc-800/60 transition-colors text-left group border-b border-zinc-800/20 last:border-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-violet-300 group-hover:text-violet-200">
+                      {`{{${name}}}`}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-zinc-600 mt-0.5 truncate">
+                    {def.description}
+                  </p>
+                  <p className="text-[9px] text-zinc-700 font-mono truncate">
+                    eg. {def.example}
+                  </p>
+                </div>
+                <span className="text-[9px] text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1">
+                  Insert →
+                </span>
+              </button>
+            ))}
+          </div>
+        ))}
+        {Object.keys(typeGroups).length === 0 && (
+          <div className="px-3 py-6 text-center">
+            <p className="text-[11px] text-zinc-600">No variables match</p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer hint */}
+      <div className="px-3 py-2 border-t border-zinc-800/50 shrink-0 flex items-center gap-2">
+        <FlaskConical className="w-3 h-3 text-zinc-700" />
+        <span className="text-[9px] text-zinc-700">
+          Variables resolve at emit time — re-rolled every send
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── History & Presets dropdowns (unchanged API, kept) ─
+
 function HistoryDropdown({
   history,
   onRestore,
@@ -505,7 +967,6 @@ function HistoryDropdown({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -571,15 +1032,8 @@ function HistoryDropdown({
   );
 }
 
-// ── NEW: Presets Panel ────────────────────────────────
-
-/**
- * Dropdown allowing users to save the current payload under a name,
- * and load/delete previously saved presets.
- */
 function PresetsDropdown({
   presets,
-  currentPayload,
   onLoad,
   onSave,
   onDelete,
@@ -594,7 +1048,6 @@ function PresetsDropdown({
 }) {
   const [newName, setNewName] = useState("");
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -602,7 +1055,6 @@ function PresetsDropdown({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [onClose]);
-
   function handleSave() {
     const name = newName.trim();
     if (!name) return;
@@ -620,8 +1072,6 @@ function PresetsDropdown({
           Saved Presets
         </span>
       </div>
-
-      {/* Save current */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-zinc-800/60">
         <input
           value={newName}
@@ -638,8 +1088,6 @@ function PresetsDropdown({
           Save
         </button>
       </div>
-
-      {/* List */}
       {presets.length === 0 ? (
         <div className="px-3 py-4 text-center">
           <p className="text-[11px] text-zinc-600">No presets saved yet</p>
@@ -678,12 +1126,6 @@ function PresetsDropdown({
   );
 }
 
-// ── NEW: ACK Response Panel ───────────────────────────
-
-/**
- * Expandable panel showing the last acknowledgement response.
- * Displayed below the editor after a successful emit.
- */
 function AckPanel({ ack, emitCount }: { ack: unknown; emitCount: number }) {
   const [expanded, setExpanded] = useState(true);
   const formatted = useMemo(() => {
@@ -694,9 +1136,7 @@ function AckPanel({ ack, emitCount }: { ack: unknown; emitCount: number }) {
       return String(ack);
     }
   }, [ack]);
-
   if (formatted === null) return null;
-
   return (
     <div className="flex flex-col gap-0 rounded-xl border border-emerald-500/20 bg-emerald-500/3 overflow-hidden shrink-0">
       <button
@@ -730,13 +1170,6 @@ function AckPanel({ ack, emitCount }: { ack: unknown; emitCount: number }) {
   );
 }
 
-// ── NEW: Multi-Emit Panel ─────────────────────────────
-
-/**
- * UI for stress-testing an event — sends the payload N times
- * with a configurable delay between each emit.
- * Results are shown inline as a compact list.
- */
 function MultiEmitPanel({
   onMultiEmit,
   disabled,
@@ -760,28 +1193,16 @@ function MultiEmitPanel({
     setRunning(false);
   }
 
-  function cancel() {
-    cancelRef.current = true;
-    setRunning(false);
-  }
-
   const successCount = results.filter((r) => r.ok).length;
-
   return (
     <div className="shrink-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md border ${
-          open
-            ? "text-violet-400 border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10"
-            : "text-zinc-600 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"
-        }`}
-        title="Multi-emit / stress test"
+        className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md border ${open ? "text-violet-400 border-violet-500/30 bg-violet-500/5" : "text-zinc-600 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"}`}
       >
         <Repeat2 className="w-3 h-3" />
         Multi
       </button>
-
       {open && (
         <div className="mt-2 rounded-xl border border-violet-500/20 bg-violet-500/3 overflow-hidden">
           <div className="flex items-center gap-3 px-3 py-2.5">
@@ -793,7 +1214,7 @@ function MultiEmitPanel({
                 max={100}
                 value={count}
                 onChange={(e) => setCount(Number(e.target.value))}
-                className="w-14 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600 transition-colors"
+                className="w-14 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -805,13 +1226,16 @@ function MultiEmitPanel({
                 step={50}
                 value={delay}
                 onChange={(e) => setDelay(Number(e.target.value))}
-                className="w-16 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600 transition-colors"
+                className="w-16 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600"
               />
             </div>
             <div className="flex-1" />
             {running ? (
               <button
-                onClick={cancel}
+                onClick={() => {
+                  cancelRef.current = true;
+                  setRunning(false);
+                }}
                 className="flex items-center gap-1.5 text-[10px] text-red-400 border border-red-500/30 hover:bg-red-500/10 rounded-lg px-3 py-1.5 transition-colors"
               >
                 <X className="w-3 h-3" />
@@ -828,7 +1252,6 @@ function MultiEmitPanel({
               </button>
             )}
           </div>
-
           {running && (
             <div className="flex items-center gap-2 px-3 pb-2.5">
               <Loader2 className="w-3 h-3 text-violet-400 animate-spin" />
@@ -837,7 +1260,6 @@ function MultiEmitPanel({
               </span>
             </div>
           )}
-
           {results.length > 0 && !running && (
             <div className="border-t border-violet-500/10 px-3 py-2">
               <div className="flex items-center justify-between mb-2">
@@ -852,7 +1274,7 @@ function MultiEmitPanel({
                 </span>
                 <button
                   onClick={() => setResults([])}
-                  className="text-[9px] text-zinc-700 hover:text-zinc-400 transition-colors"
+                  className="text-[9px] text-zinc-700 hover:text-zinc-400"
                 >
                   Clear
                 </button>
@@ -861,12 +1283,8 @@ function MultiEmitPanel({
                 {results.map((r) => (
                   <span
                     key={r.index}
-                    title={`#${r.index + 1} — ${relativeTime(r.sentAt)}`}
-                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
-                      r.ok
-                        ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/8"
-                        : "text-red-400 border-red-500/25 bg-red-500/8"
-                    }`}
+                    title={`#${r.index + 1}`}
+                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${r.ok ? "text-emerald-400 border-emerald-500/25 bg-emerald-500/8" : "text-red-400 border-red-500/25 bg-red-500/8"}`}
                   >
                     {r.index + 1}
                   </span>
@@ -880,23 +1298,9 @@ function MultiEmitPanel({
   );
 }
 
-// ── Component ─────────────────────────────────────────
+// ── Main Component ────────────────────────────────────
 
-/**
- * Enhanced EventPanel for nestjs-wsgate.
- *
- * New features over the base version:
- * - **Payload History** — ring buffer of last 8 sent payloads, restorable
- * - **Named Presets** — save/load custom payload snapshots per event (localStorage)
- * - **Live JSON validation badge** — inline Valid/Invalid in the toolbar
- * - **Modified indicator** — shows when payload diverges from the skeleton
- * - **Inline ACK response panel** — expandable, shows last ack after emit
- * - **Session emit counter** — total emits in this session on the Emit button
- * - **Multi-emit** — stress test: send N times with configurable delay
- */
 export default function EventPanel() {
-  // ── Stores ────────────────────────────────────────────
-
   const {
     selectedEvent,
     addLog,
@@ -909,40 +1313,23 @@ export default function EventPanel() {
   const { emit, status, disconnect } = useSocketStore();
   const connected = status === "connected";
 
-  // ── State ─────────────────────────────────────────────
-
   const [payload, setPayload] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [editorReady, setEditorReady] = useState(false);
   const [emitSuccess, setEmitSuccess] = useState(false);
   const [codeGenOpen, setCodeGenOpen] = useState(false);
-
-  // ── NEW state ─────────────────────────────────────────
-
-  /** Session-level count of successful emits. */
   const [emitCount, setEmitCount] = useState(0);
-
-  /** Last acknowledgement received — displayed in the ACK panel. */
   const [lastAck, setLastAck] = useState<unknown>(undefined);
-
-  /** History entries for the current event (ring buffer, max 8). */
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-
-  /** Whether the history dropdown is visible. */
   const [historyOpen, setHistoryOpen] = useState(false);
-
-  /** Saved presets for the current event. */
   const [presets, setPresets] = useState<Preset[]>([]);
-
-  /** Whether the presets dropdown is visible. */
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const [fakerOpen, setFakerOpen] = useState(false);
 
   const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(
     null,
   );
   const monaco = useMonaco();
-
-  // ── Derived ───────────────────────────────────────────
 
   const skeletonJson = useMemo(() => {
     if (!selectedEvent) return "{}";
@@ -953,56 +1340,58 @@ export default function EventPanel() {
     );
   }, [selectedEvent]);
 
-  // ── Persist: load history + presets on event change ──
-
+  // ── Load history + presets ────────────────────────────
   useEffect(() => {
     if (!selectedEvent) return;
-    const key = selectedEvent.event;
-    setHistory(loadFromStorage<HistoryEntry[]>(storageKey(key, "history"), []));
-    setPresets(loadFromStorage<Preset[]>(storageKey(key, "presets"), []));
+    setHistory(
+      loadFromStorage<HistoryEntry[]>(
+        storageKey(selectedEvent.event, "history"),
+        [],
+      ),
+    );
+    setPresets(
+      loadFromStorage<Preset[]>(storageKey(selectedEvent.event, "presets"), []),
+    );
     setLastAck(undefined);
     setEmitCount(0);
   }, [selectedEvent]);
 
   // ── Editor mount ──────────────────────────────────────
-
   const handleEditorMount: OnMount = (editor) => {
     editorRef.current = editor;
-    setTimeout(() => {
-      editor.getAction("editor.action.formatDocument")?.run();
-    }, 100);
+    setTimeout(
+      () => editor.getAction("editor.action.formatDocument")?.run(),
+      100,
+    );
   };
 
   // ── Reset on event change ─────────────────────────────
-
   useEffect(() => {
     setEditorReady(false);
-    const timer = setTimeout(() => setEditorReady(true), 300);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setEditorReady(true), 300);
+    return () => clearTimeout(t);
   }, [selectedEvent]);
 
   // ── Auto-disconnect ───────────────────────────────────
-
   useEffect(() => {
     if (!selectedEvent) return;
-    const eventNamespace = selectedEvent.namespace ?? "/";
-    if (eventNamespace !== selectedNamespace && connected) disconnect();
+    if ((selectedEvent.namespace ?? "/") !== selectedNamespace && connected)
+      disconnect();
   }, [selectedEvent, selectedNamespace, status, disconnect]);
 
-  // ── Auto-generate skeleton ────────────────────────────
-
+  // ── Skeleton fill ─────────────────────────────────────
   useEffect(() => {
     if (!selectedEvent) return;
     setPayload(skeletonJson);
     setError(null);
     setEmitSuccess(false);
-    setTimeout(() => {
-      editorRef.current?.getAction("editor.action.formatDocument")?.run();
-    }, 150);
+    setTimeout(
+      () => editorRef.current?.getAction("editor.action.formatDocument")?.run(),
+      150,
+    );
   }, [selectedEvent, skeletonJson]);
 
   // ── Monaco JSON schema ────────────────────────────────
-
   useEffect(() => {
     if (!monaco || !selectedEvent || selectedEvent.type !== "emit") return;
     const properties = Object.fromEntries(
@@ -1031,24 +1420,63 @@ export default function EventPanel() {
     });
   }, [monaco, selectedEvent]);
 
+  // ── NEW: Monaco Faker completion provider ─────────────
+  /**
+   * Registers a JSON completion provider that offers all {{$var}} tokens
+   * when the user presses Ctrl+Space (or types `{{`).
+   *
+   * The provider is registered once per monaco instance and disposed on cleanup.
+   */
+  useEffect(() => {
+    if (!monaco) return;
+
+    const disposable = monaco.languages.registerCompletionItemProvider("json", {
+      // Trigger on `{` so typing `{{` auto-opens completions
+      triggerCharacters: ["{", "$"],
+
+      provideCompletionItems(model, position) {
+        const wordInfo = model.getWordUntilPosition(position);
+        const lineContent = model.getLineContent(position.lineNumber);
+
+        // Only suggest inside a string value (heuristic: line contains a `:`)
+        const range: MonacoType.IRange = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: wordInfo.startColumn,
+          endColumn: wordInfo.endColumn,
+        };
+
+        // Check if we're inside a string in the JSON
+        const beforeCursor = lineContent.slice(0, position.column - 1);
+        const isInString = (beforeCursor.match(/"/g)?.length ?? 0) % 2 !== 0;
+        if (!isInString) return { suggestions: [] };
+
+        return { suggestions: buildFakerCompletions(monaco, range) };
+      },
+    });
+
+    return () => disposable.dispose();
+  }, [monaco]);
+
   // ── Handlers ──────────────────────────────────────────
 
   function handleEmit() {
     if (!selectedEvent || !connected) return;
-    const parsed = tryParseJson(payload);
+
+    // Resolve faker vars before parsing
+    const resolved = resolveFakerVars(payload);
+    const parsed = tryParseJson(resolved);
     if (parsed === null) {
       setError("Invalid JSON — check your payload syntax");
       return;
     }
     setError(null);
     const logId = addLog("out", selectedEvent.event, parsed);
-
     emit(selectedEvent.event, parsed, (ackData: unknown) => {
       addAck(logId, ackData);
       setLastAck(ackData);
     });
 
-    // Push to history
     const entry: HistoryEntry = {
       id: shortId(),
       payload,
@@ -1072,20 +1500,43 @@ export default function EventPanel() {
     if (!selectedEvent) return;
     setPayload(skeletonJson);
     setError(null);
-    setTimeout(() => {
-      editorRef.current?.getAction("editor.action.formatDocument")?.run();
-    }, 100);
+    setTimeout(
+      () => editorRef.current?.getAction("editor.action.formatDocument")?.run(),
+      100,
+    );
   }
 
   function handleRestorePayload(p: string) {
     setPayload(p);
     setError(null);
-    setTimeout(() => {
-      editorRef.current?.getAction("editor.action.formatDocument")?.run();
-    }, 100);
+    setTimeout(
+      () => editorRef.current?.getAction("editor.action.formatDocument")?.run(),
+      100,
+    );
   }
 
-  // ── NEW: Presets handlers ─────────────────────────────
+  /**
+   * Inserts a faker snippet at the Monaco cursor position.
+   * Falls back to appending at end of current value if editor isn't focused.
+   */
+  function handleInsertFakerVar(snippet: string) {
+    const editor = editorRef.current;
+    if (!editor) {
+      // fallback — just set payload with appended snippet
+      setPayload((p) => p.replace(/""\s*$/, `"${snippet}"`));
+      return;
+    }
+    const selection = editor.getSelection();
+    if (!selection) return;
+    editor.executeEdits("faker-insert", [
+      {
+        range: selection,
+        text: snippet,
+        forceMoveMarkers: true,
+      },
+    ]);
+    editor.focus();
+  }
 
   function handleSavePreset(name: string) {
     if (!selectedEvent) return;
@@ -1113,14 +1564,12 @@ export default function EventPanel() {
     saveToStorage(storageKey(selectedEvent.event, "history"), []);
   }
 
-  // ── NEW: Multi-emit runner ────────────────────────────
-
   const handleMultiEmit = useCallback(
     async (count: number, delayMs: number): Promise<MultiEmitResult[]> => {
       if (!selectedEvent || !connected) return [];
-      const parsed = tryParseJson(payload);
+      const resolved = resolveFakerVars(payload);
+      const parsed = tryParseJson(resolved);
       if (!parsed) return [];
-
       const results: MultiEmitResult[] = [];
       for (let i = 0; i < count; i++) {
         await new Promise<void>((resolve) => {
@@ -1135,7 +1584,6 @@ export default function EventPanel() {
             });
             resolve();
           });
-          // Resolve even if no ack after 3s
           setTimeout(() => {
             if (results.length <= i) {
               results.push({
@@ -1148,9 +1596,8 @@ export default function EventPanel() {
             }
           }, 3000);
         });
-        if (i < count - 1 && delayMs > 0) {
+        if (i < count - 1 && delayMs > 0)
           await new Promise((r) => setTimeout(r, delayMs));
-        }
       }
       setEmitCount((c) => c + count);
       return results;
@@ -1159,7 +1606,6 @@ export default function EventPanel() {
   );
 
   // ── Keyboard shortcut ─────────────────────────────────
-
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -1172,46 +1618,16 @@ export default function EventPanel() {
   }, [connected, selectedEvent, payload]);
 
   // ── Empty state ───────────────────────────────────────
-
-  if (!selectedEvent) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-            <MousePointerClick className="w-7 h-7 text-zinc-700" />
-          </div>
-          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500/20 border border-blue-500/30" />
-          <div className="absolute -bottom-1 -left-1 w-2 h-2 rounded-full bg-zinc-700" />
-        </div>
-        <div className="flex flex-col items-center gap-1.5">
-          <p className="text-sm font-semibold text-zinc-300">
-            No event selected
-          </p>
-          <p className="text-xs text-zinc-600 text-center leading-relaxed">
-            Pick an event from the sidebar
-            <br />
-            to compose and emit a payload
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-zinc-700">
-          <ArrowDownLeft className="w-3.5 h-3.5 rotate-45" />
-          <span>from the sidebar</span>
-        </div>
-      </div>
-    );
-  }
-
+  if (!selectedEvent) return <EmptyState />;
   if (!editorReady) return <PanelShimmer />;
 
   // ── Subscribe view ────────────────────────────────────
-
   if (selectedEvent.type === "subscribe") {
     return (
       <div className="flex flex-col h-full overflow-hidden p-5 gap-4 relative">
         <button
           onClick={() => setSelectedEvent(null)}
           className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors z-10"
-          title="Close event (deselect)"
         >
           <X className="w-4 h-4" />
         </button>
@@ -1266,29 +1682,22 @@ export default function EventPanel() {
   }
 
   // ── Emit view ─────────────────────────────────────────
-
   return (
     <>
       <div className="flex flex-col h-full overflow-hidden p-5 gap-4 relative">
-        {/* Close */}
         <button
           onClick={() => setSelectedEvent(null)}
           className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors z-10"
-          title="Close event (deselect)"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Header */}
         <EventHeader event={selectedEvent} />
-
-        {/* Schema pills */}
         <SchemaPills
           payload={selectedEvent.payload ?? {}}
           label="Payload Schema"
         />
 
-        {/* Response event */}
         {selectedEvent.response && (
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
@@ -1305,16 +1714,18 @@ export default function EventPanel() {
         <div className="flex flex-col gap-2 flex-1 min-h-0">
           {/* ── Toolbar ── */}
           <div className="flex items-center justify-between shrink-0">
-            {/* Left — label + live badges */}
-            <div className="flex items-center gap-2">
+            {/* Left — label + live status badges */}
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
                 Payload (JSON)
               </span>
               <JsonValidityBadge payload={payload} />
               <ModifiedBadge payload={payload} skeleton={skeletonJson} />
+              {/* Faker vars indicator — glows when payload contains {{$...}} */}
+              <FakerBadge payload={payload} />
             </div>
 
-            {/* Right — all actions */}
+            {/* Right — actions */}
             <div className="flex items-center gap-1 flex-wrap justify-end">
               <CopyButton text={payload} />
 
@@ -1338,19 +1749,37 @@ export default function EventPanel() {
 
               <div className="w-px h-4 bg-zinc-800 mx-0.5" />
 
-              {/* ── NEW: History button ── */}
+              {/* ── NEW: Faker variables button ── */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setFakerOpen((v) => !v);
+                    setHistoryOpen(false);
+                    setPresetsOpen(false);
+                  }}
+                  title="Insert faker variable (Ctrl+Space)"
+                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${fakerOpen ? "text-violet-300 bg-zinc-800 border border-violet-500/30" : "text-zinc-600 hover:text-violet-300 hover:bg-zinc-800 border border-transparent"}`}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  Faker
+                </button>
+                {fakerOpen && (
+                  <FakerVarsPanel
+                    onInsert={handleInsertFakerVar}
+                    onClose={() => setFakerOpen(false)}
+                  />
+                )}
+              </div>
+
+              {/* History */}
               <div className="relative">
                 <button
                   onClick={() => {
                     setHistoryOpen((v) => !v);
                     setPresetsOpen(false);
+                    setFakerOpen(false);
                   }}
-                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${
-                    historyOpen
-                      ? "text-zinc-200 bg-zinc-800"
-                      : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"
-                  }`}
-                  title="Payload history"
+                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${historyOpen ? "text-zinc-200 bg-zinc-800" : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"}`}
                 >
                   <History className="w-3 h-3" />
                   History
@@ -1370,19 +1799,15 @@ export default function EventPanel() {
                 )}
               </div>
 
-              {/* ── NEW: Presets button ── */}
+              {/* Presets */}
               <div className="relative">
                 <button
                   onClick={() => {
                     setPresetsOpen((v) => !v);
                     setHistoryOpen(false);
+                    setFakerOpen(false);
                   }}
-                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${
-                    presetsOpen
-                      ? "text-zinc-200 bg-zinc-800"
-                      : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"
-                  }`}
-                  title="Saved presets"
+                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${presetsOpen ? "text-zinc-200 bg-zinc-800" : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"}`}
                 >
                   {presets.length > 0 ? (
                     <Bookmark className="w-3 h-3" />
@@ -1422,19 +1847,18 @@ export default function EventPanel() {
 
               <div className="w-px h-4 bg-zinc-800 mx-0.5" />
 
-              {/* ── Emit button with session counter ── */}
+              {/* Emit */}
               <button
                 onClick={handleEmit}
                 disabled={!connected}
                 title={connected ? "Emit event (Ctrl+Enter)" : "Connect first"}
-                className={`relative flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200
-                  disabled:opacity-40 disabled:cursor-not-allowed ${
-                    emitSuccess
-                      ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
-                      : connected
-                        ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/40 hover:shadow-blue-800/50 hover:scale-[1.02] active:scale-[0.98]"
-                        : "bg-zinc-800 border-zinc-700 text-zinc-500"
-                  }`}
+                className={`relative flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  emitSuccess
+                    ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
+                    : connected
+                      ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/40 hover:scale-[1.02] active:scale-[0.98]"
+                      : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                }`}
               >
                 {emitSuccess ? (
                   <>
@@ -1447,7 +1871,6 @@ export default function EventPanel() {
                     {connected ? "Emit" : "Connect"}
                   </>
                 )}
-                {/* Session emit counter badge */}
                 {emitCount > 0 && !emitSuccess && (
                   <span className="absolute -top-1.5 -right-1.5 text-[8px] font-mono font-bold bg-zinc-700 text-zinc-300 rounded-full w-4 h-4 flex items-center justify-center border border-zinc-600">
                     {emitCount > 99 ? "99+" : emitCount}
@@ -1484,6 +1907,7 @@ export default function EventPanel() {
                     formatOnType: true,
                     autoClosingBrackets: "always",
                     autoClosingQuotes: "always",
+                    suggest: { showVariables: true },
                   }}
                 />
               ) : (
@@ -1493,18 +1917,20 @@ export default function EventPanel() {
           </div>
         </div>
 
-        {/* ── NEW: ACK response panel ── */}
+        {/* ACK panel */}
         {lastAck !== undefined && (
           <AckPanel ack={lastAck} emitCount={emitCount} />
         )}
 
-        {/* ── NEW: Multi-emit panel ── */}
+        {/* Multi-emit */}
         <MultiEmitPanel
           onMultiEmit={handleMultiEmit}
-          disabled={!connected || tryParseJson(payload) === null}
+          disabled={
+            !connected || tryParseJson(resolveFakerVars(payload)) === null
+          }
         />
 
-        {/* Error banner */}
+        {/* Error */}
         {error && (
           <EmitError message={error} onDismiss={() => setError(null)} />
         )}
@@ -1519,11 +1945,9 @@ export default function EventPanel() {
           </div>
         )}
 
-        {/* Shortcut hint */}
         {connected && !emitSuccess && <ShortcutHint />}
       </div>
 
-      {/* Code generation modal */}
       <CodeGenPanel
         open={codeGenOpen}
         onClose={() => setCodeGenOpen(false)}

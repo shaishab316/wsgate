@@ -360,7 +360,7 @@ function ErrorState({
     <div className="flex flex-col items-center justify-center px-4 py-10 gap-6 text-center">
       {/* Icon + pulse ring */}
       <div className="relative">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center">
+        <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center">
           <ServerCrash className="w-8 h-8 text-red-400" />
         </div>
         <div className="absolute inset-0 rounded-2xl border border-red-500/20 animate-pulse" />
