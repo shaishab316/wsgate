@@ -1,9 +1,22 @@
 import { Search } from "lucide-react";
 
 /**
- * Shown when events load successfully but none match the search query.
+ * Displays an empty state message when search returns no results.
  *
- * @param onClear - Clears the search input.
+ * This component is shown when events load successfully but none match
+ * the current search query. It provides helpful information to the user
+ * and offers a way to clear the search filter.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <EmptySearch onClear={() => setSearchQuery('')} />
+ * ```
+ *
+ * @param {Object} props - Component props
+ * @param {() => void} props.onClear - Callback function to clear the search input
+ *
+ * @returns {JSX.Element} An empty state component with search icon, message, and clear button
  */
 export function EmptySearch({ onClear }: { onClear: () => void }) {
   return (

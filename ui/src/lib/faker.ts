@@ -302,6 +302,20 @@ export const FAKER_VARS: Record<string, FakerVarDef> = {
  * so numbers and booleans land as their correct JSON types.
  *
  * Mixed strings like `"user-{{$randomInt}}"` always resolve as strings.
+ *
+ * @example
+ * ```
+ * // Pure placeholder (entire value):
+ * resolveFakerVars('{"age": "{{$randomInt}}"}')
+ * // Returns: {"age": 42}  <- unquoted number
+ *
+ * // Interpolated (part of string):
+ * resolveFakerVars('{"user": "user-{{$randomInt}}"}')
+ * // Returns: {"user": "user-847"}  <- quoted string
+ * ```
+ *
+ * @param jsonStr - JSON string (possibly with faker placeholders like {{$randomInt}} or {{$randomFirstName}})
+ * @returns JSON string with all {{$varName}} placeholders resolved
  */
 export function resolveFakerVars(jsonStr: string): string {
   // Pass 1 — pure-value replacements (the whole string value IS one var)
@@ -330,7 +344,16 @@ export function resolveFakerVars(jsonStr: string): string {
   return result;
 }
 
-/** Returns true if a string contains any faker placeholder. */
+/**
+ * Check if a JSON string contains any faker placeholders. * * Used before calling resolveFakerVars() to avoid unnecessary regex scanning. * Checks for the pattern `{{$varName}}`. * * @example
+ * ```
+ * hasFakerVars('{"name": "Alice"}') // false
+ * hasFakerVars('{"name": "{{$randomFirstName}}"}') // true
+ * ```
+ *
+ * @param jsonStr - String to check for faker placeholders
+ * @returns true if string contains any {{$varName}} patterns
+ */
 export function hasFakerVars(jsonStr: string): boolean {
   return /\{\{\$[^}]+\}\}/.test(jsonStr);
 }
@@ -338,9 +361,45 @@ export function hasFakerVars(jsonStr: string): boolean {
 // ── Faker completion items for Monaco ─────────────────
 
 /**
- * Builds Monaco CompletionItem list from FAKER_VARS.
- * Registered as a JSON language provider — triggered on `{` and Ctrl+Space.
+ * Build Monaco Editor completion items for faker variables.
+ *
+ * Creates a list of CompletionItems based on FAKER_VARS, ready to be passed
+ * to Monaco's completion provider. Each item includes:
+ * - Display label: `{{$variableName}}`
+ * - Type/kind indicator: "faker · string|number|boolean|uuid"
+ * - Description and example from the variable definition
+ * - Correct insertion text and filter/sort keys
+ *
+ * Registered automatically in EventPanel's useEffect when Monaco language
+ * provider initializes. Triggered on `{` keypress or Ctrl+Space in JSON editor.
+ *
+ * @example
+ * ```tsx
+ * useEffect(() => {
+ *   if (!monaco) return;
+ *   monaco.languages.registerCompletionItemProvider("json", {
+ *     triggerCharacters: ["{", "$"],
+ *     provideCompletionItems(model, position) {
+ *       const range = model.getWordUntilPosition(position);
+ *       const completeRange = {
+ *         startLineNumber: position.lineNumber,
+ *         startColumn: range.startColumn,
+ *         endLineNumber: position.lineNumber,
+ *         endColumn: position.column,
+ *       };
+ *       return {
+ *         suggestions: buildFakerCompletions(monaco, completeRange),
+ *       };
+ *     },
+ *   });
+ * }, [monaco]);
+ * ```
+ *
+ * @param monaco - Monaco editor module (from useMonaco() hook)
+ * @param range - The range object for where completions should be inserted
+ * @returns Array of CompletionItem objects for all faker variables
  */
+
 export function buildFakerCompletions(
   monaco: typeof MonacoType,
   range: MonacoType.IRange,
@@ -350,7 +409,11 @@ export function buildFakerCompletions(
     kind: monaco.languages.CompletionItemKind.Variable,
     detail: `faker · ${def.type}`,
     documentation: {
-      value: `**${def.description}**\n\nExample: \`${def.example}\`\n\nType: \`${def.type}\``,
+      value: `**${def.description}**
+
+Example: \`${def.example}\`
+
+Type: \`${def.type}\``,
     },
     insertText: `{{${name}}}`,
     filterText: name,

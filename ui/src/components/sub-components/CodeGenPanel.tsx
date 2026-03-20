@@ -435,19 +435,40 @@ function LangDot({ color }: { color: string }) {
   );
 }
 
-// ── Component ─────────────────────────────────────────
-
 /**
- * Multi-language code generation modal (Postman-style).
+ * A multi-language code generation modal component for Socket.IO client examples.
  *
- * Key layout fix:
- * - Modal is `h-[80vh]` with `flex flex-col`
- * - Static sections (header, tabs, bar, footer) are `shrink-0`
- * - Editor wrapper is `flex-1 min-h-0 relative`
- * - Inner div is `absolute inset-0` — gives Monaco a concrete pixel height
+ * Provides ready-to-run code snippets in 10+ languages (TypeScript, JavaScript, Python, Go, Java, C#, PHP, Ruby, Dart, wscat).
+ * Users can switch between languages via tabs, star favorites for quick access, copy generated code, and view installation hints.
  *
- * This is the same pattern used in EventPanel and is the only reliable
- * way to give Monaco `height="100%"` inside a flex container.
+ * Layout:
+ * - Modal uses `h-[80vh] flex flex-col` with absolute positioning for the Monaco editor
+ * - Static sections (header, tabs, bar, footer) have `shrink-0` to preserve size
+ * - Editor container uses `flex-1 min-h-0 relative` with absolute child for proper height calculation
+ * - Supports keyboard escape to close and backdrop click to dismiss
+ *
+ * Features:
+ * - Syntax-highlighted code generation with configurable token auth injection
+ * - Language-specific tab styling with colored dots and badges
+ * - Star/favorite system to quickly access preferred languages
+ * - Copy-to-clipboard for both generated code and install commands
+ * - Format button triggers Monaco's built-in document formatting
+ * - Responsive tab strip with horizontal scrolling on overflow
+ * - Footer with language-specific install hints
+ *
+ * @component
+ * @example
+ * ```tsx
+ * const [codeGenOpen, setCodeGenOpen] = useState(false);
+ * <CodeGenPanel
+ *   open={codeGenOpen}
+ *   onClose={() => setCodeGenOpen(false)}
+ *   event={selectedEvent}
+ *   url="http://localhost:3000"
+ *   token="Bearer abc123"
+ *   payload='{"message": "hello"}'
+ * />
+ * ```
  */
 export default function CodeGenPanel({
   open,

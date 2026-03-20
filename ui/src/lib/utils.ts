@@ -10,6 +10,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Resolve a type string into a JSON Schema compatible object.
+ *
+ * Handles union types (pipe-separated) and common type names,
+ * returning schema fragments for validation and code generation.
+ *
+ * @example
+ * ```
+ * resolveJsonType("string") → { type: "string" }
+ * resolveJsonType("number") → { type: "number" }
+ * resolveJsonType("admin|user|guest") → { enum: ["admin", "user", "guest"] }
+ * ```
+ *
+ * @param type - Type string from event payload definition (e.g., "number", "boolean|null", "one|two|three")
+ * @returns JSON Schema compatible object for validation or code generation
+ */
 export function resolveJsonType(type: string): object {
   const trimmed = type.trim();
   if (trimmed.includes("|"))
@@ -25,6 +41,26 @@ export function resolveJsonType(type: string): object {
   }
 }
 
+/**
+ * Build an empty/default payload object from type definitions.
+ *
+ * Creates a skeleton payload with sensible defaults based on type hints:
+ * - `string` → empty string `""`
+ * - `number|integer` → `0`
+ * - `boolean` → `false`
+ * - union types → first option (e.g., "admin|user" → "admin")
+ *
+ * Used in EventPanel when user selects an event to initialize the editor.
+ *
+ * @example
+ * ```
+ * const def = { userId: "string", count: "number", active: "boolean" }
+ * buildPayloadSkeleton(def) // { userId: "", count: 0, active: false }
+ * ```
+ *
+ * @param payload - Payload type definitions from WsEvent (Record<key, typeString>)
+ * @returns Object with same keys, default values based on types
+ */
 export function buildPayloadSkeleton(
   payload: Record<string, string>,
 ): Record<string, unknown> {
@@ -39,6 +75,21 @@ export function buildPayloadSkeleton(
   );
 }
 
+/**
+ * Safely parse JSON string, returning null on error.
+ *
+ * Used for validating/loading user-entered JSON without throwing.
+ * Never throws — returns null if parse fails for any reason.
+ *
+ * @example
+ * ```
+ * tryParseJson('{"ok":true}') → { ok: true }
+ * tryParseJson('invalid') → null
+ * ```
+ *
+ * @param raw - Raw JSON string to parse
+ * @returns Parsed object or null if parsing fails
+ */
 export function tryParseJson(raw: string): unknown | null {
   try {
     return JSON.parse(raw);
@@ -47,10 +98,46 @@ export function tryParseJson(raw: string): unknown | null {
   }
 }
 
+/**
+ * Generate a namespaced localStorage key for storing event-specific data.
+ *
+ * Prevents collisions between different events' history, presets, and settings.
+ * Key format: `wsgate:<eventName>:<suffix>`
+ *
+ * @example
+ * ```
+ * storageKey("user.created", "history") // "wsgate:user.created:history"
+ * storageKey("user.created", "presets") // "wsgate:user.created:presets"
+ * ```
+ *
+ * @param eventName - WebSocket event name (e.g., "user.created")
+ * @param suffix - Data type suffix (e.g., "history", "presets", "lastPayload")
+ * @returns Unique localStorage key for this event/data combination
+ */
 export function storageKey(eventName: string, suffix: string) {
   return `wsgate:${eventName}:${suffix}`;
 }
 
+/**
+ * Load and parse a JSON value from localStorage, with fallback.
+ *
+ * Generic function for type-safe storage access. Returns fallback
+ * if key doesn't exist, isn't valid JSON, or any error occurs during parse.
+ * Never throws.
+ *
+ * @example
+ * ```tsx
+ * const history = loadFromStorage<HistoryEntry[]>(
+ *   storageKey(eventName, "history"),
+ *   [] // default empty history
+ * );
+ * ```
+ *
+ * @typeParam T - Expected type of stored value (used for TypeScript only)
+ * @param key - localStorage key
+ * @param fallback - Value to return if key missing, invalid, or unparseable
+ * @returns Parsed stored value, or fallback value
+ */
 export function loadFromStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -61,6 +148,21 @@ export function loadFromStorage<T>(key: string, fallback: T): T {
   }
 }
 
+/**
+ * Save a value to localStorage as JSON, silently handling quota errors.
+ *
+ * Wraps the value in JSON.stringify() and stores to localStorage.
+ * If quota is exceeded or any error occurs, silently fails (doesn't throw).
+ * Used for persisting event history, presets, and UI state.
+ *
+ * @example
+ * ```tsx
+ * saveToStorage(storageKey(eventName, "presets"), currentPresets);
+ * ```
+ *
+ * @param key - localStorage key
+ * @param value - Any JSON-serializable value
+ */
 export function saveToStorage(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -69,10 +171,40 @@ export function saveToStorage(key: string, value: unknown) {
   }
 }
 
+/**
+ * Generate a random short alphanumeric ID suitable for UI identifiers.
+ *
+ * Uses `Math.random().toString(36)` to create 7-character unique IDs.
+ * Good enough for frontend identifiers but NOT cryptographically secure.
+ * Used for log entry IDs, temporary component keys, etc.
+ *
+ * @example
+ * ```
+ * shortId() // "a5x9k2m"
+ * shortId() // "7qp3n1b"
+ * ```
+ *
+ * @returns Random 7-character alphanumeric string
+ */
 export function shortId() {
   return Math.random().toString(36).slice(2, 9);
 }
 
+/**
+ * Format an ISO timestamp as relative human-readable time (e.g., "5s ago").
+ *
+ * Supports: just now, seconds, minutes, hours.
+ * Used in event logs and timestamps across the UI.
+ *
+ * @example
+ * ```
+ * relativeTime("2025-03-20T15:30:00Z") // "2s ago" (if called at 15:30:02Z)
+ * relativeTime("2025-03-20T15:20:00Z") // "10m ago"
+ * ```
+ *
+ * @param iso - ISO 8601 timestamp string
+ * @returns Relative time string ("just now", "5s ago", "2m ago", "1h ago", etc.)
+ */
 export function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < 5_000) return "just now";
@@ -168,11 +300,39 @@ export function filterEvents(events: WsEvent[], query: string): WsEvent[] {
   );
 }
 
+/**
+ * Format milliseconds as human-readable latency (ms or s).
+ *
+ * @example
+ * ```
+ * formatLatency(450) // "450ms"
+ * formatLatency(1500) // "1.5s"
+ * ```
+ *
+ * @param ms - Latency in milliseconds
+ * @returns Formatted latency string with unit ("Xms" or "Xs")
+ */
 export function formatLatency(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+/**
+ * Trigger browser download of data as a JSON file.
+ *
+ * Creates a Blob, generates a download link, and triggers the download
+ * in the user's browser. Auto-formats with 2-space indent for readability.
+ *
+ * @example
+ * ```tsx
+ * <button onClick={() => downloadJson(logs, "events.json")}>
+ *   Export as JSON
+ * </button>
+ * ```
+ *
+ * @param data - Any JSON-serializable value to export
+ * @param filename - Name for downloaded file (e.g., "events.json")
+ */
 export function downloadJson(data: unknown, filename: string) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
@@ -185,6 +345,21 @@ export function downloadJson(data: unknown, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Safely stringify any value to JSON with 2-space indent, fallback to String().
+ *
+ * Used for preparing payloads for display/copying. If JSON.stringify fails
+ * (e.g., circular references), falls back to String(data).
+ *
+ * @example
+ * ```
+ * safeStringify({ x: 1 }) // '{\n  "x": 1\n}'
+ * safeStringify(undefined) // "undefined"
+ * ```
+ *
+ * @param data - Any value to stringify
+ * @returns Pretty-printed JSON (2-space indent) or String representation
+ */
 export function safeStringify(data: unknown): string {
   try {
     return JSON.stringify(data, null, 2);

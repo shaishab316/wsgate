@@ -228,8 +228,51 @@ const LINKS = [
   },
 ] as const;
 
-// ── Component ─────────────────────────────────────────
-
+/**
+ * AuthorCard Component
+ *
+ * A premium interactive GitHub profile card component that showcases developer information
+ * with sophisticated animations and real-time data fetching.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <AuthorCard />
+ * ```
+ *
+ * @behavior
+ * - **Collapsed State**: Renders as a compact pill displaying GitHub username with online status indicator
+ * - **Hover State**: Expands into a full profile card with spring animation (scaleY from bottom)
+ * - **Content Reveal**: Each section fades in with staggered delays for visual polish
+ * - **Data Fetching**: Asynchronously loads GitHub user data from GitHub API with fallback
+ * - **Count Animation**: Statistics animate with easing when card expands
+ *
+ * @features
+ * - GitHub API integration with fallback data
+ * - Smooth spring-based card expansion animation
+ * - Staggered fade-in animations for all sections
+ * - Count-up animation for statistics (repos, followers, etc.)
+ * - Terminal-style UI chrome with animated window controls
+ * - Responsive grid layout for stats pills
+ * - Interactive links to GitHub, blog, and npm profile
+ * - "Open to Work" badge display when hireable flag is true
+ * - Technology stack display with color-coded tags
+ * - Real-time hover state management
+ *
+ * @returns {JSX.Element} The rendered author card component
+ *
+ * @internal
+ * Uses the following sub-components:
+ * - `StatPill`: Displays individual statistic with icon and animated count
+ * - `MetaRow`: Renders metadata rows with optional link support
+ * - `useCountUp`: Custom hook for animating numeric values
+ *
+ * @performance
+ * - Debounced hover state with 120ms delay before count animation
+ * - RequestAnimationFrame for smooth count-up animations
+ * - Cleanup of RAF callbacks on unmount to prevent memory leaks
+ * - Fallback UI renders immediately while async data loads
+ */
 export default function AuthorCard() {
   const [user, setUser] = useState<GitHubUser>(FALLBACK);
   const [hovered, setHovered] = useState(false);

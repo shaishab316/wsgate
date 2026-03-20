@@ -30,6 +30,48 @@ import { STATUS_CONFIG } from "./sub-components/Config";
 import { NavResizeHandle } from "./sub-components/NavResizeHandle";
 import { NamespacePicker } from "./sub-components/NamespacePicker";
 
+/**
+ * Navigation Bar — Top-level UI controls for connection, authentication, and settings.
+ *
+ * Manages the WebSocket connection lifecycle and displays connection status, token input,
+ * namespace selection, and theme toggle. All inputs are persisted to localStorage via
+ * `useWsgateStore`, and the WebSocket connection is managed by `useSocketStore`.
+ *
+ * ## Features
+ *
+ * - **URL Input** — Set WebSocket server address with debounced store updates
+ * - **Token Auth** — Store authentication token securely (masked toggle available)
+ * - **Connection Controls** — Connect/Disconnect button with real-time status indicator
+ * - **Namespace Picker** — Filter events by namespace (auto-disconnects on namespace change)
+ * - **Theme Toggle** — Switch between light/dark modes with `dark:` class toggle on documentElement
+ *
+ * ## Connection Lifecycle
+ *
+ * ```
+ * User enters URL → Click Connect → Establish WebSocket → Sidebar loads events
+ * ↓
+ * User selects event → EventPanel becomes active → Composable with JSON editor
+ * ↓
+ * User clicks Emit → Event sent to server → ACK received → EventLog displays
+ * ↓
+ * User clicks Disconnect → WebSocket closes → All panels become read-only
+ * ```
+ *
+ * ## State Management
+ *
+ * - **Persisted**: URL, token, selected event, selected namespace (via `useWsgateStore`)
+ * - **Session-only**: Input focus states, token visibility, theme preference
+ * - **Derived**: Connected/connecting/disconnected states from `useSocketStore.status`
+ *
+ * @example
+ * ```tsx
+ * // Rendered at the top of App.tsx:
+ * <Navbar />
+ * // Provides connection controls, inputs are live-bound to global stores
+ * ```
+ *
+ * @component
+ */
 export default function Navbar() {
   // ── Stores ──────────────────────────────────────────
 

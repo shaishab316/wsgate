@@ -24,7 +24,7 @@ function ResizeHandle() {
   return (
     <PanelResizeHandle className="group relative w-1 bg-zinc-800 hover:bg-blue-500/40 active:bg-blue-500 transition-colors duration-150 cursor-col-resize">
       {/* Grip dots */}
-      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-0.75 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
         {[0, 1, 2].map((i) => (
           <div key={i} className="size-0.75 rounded-full bg-blue-400" />
         ))}

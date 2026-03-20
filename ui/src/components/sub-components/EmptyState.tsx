@@ -13,83 +13,10 @@
  *   - Staggered fade-up entry animation
  */
 
-import { useEffect, useState } from "react";
 import { MousePointerClick } from "lucide-react";
 import appIcon from "@/assets/icon.png";
 import AuthorCard from "./AuthorCard";
-
-// ── Global keyframes (injected once) ─────────────────
-
-const CSS = `
-@keyframes _wsgate_fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-@keyframes _wsgate_glowPulse {
-  0%,100% { box-shadow: 0 0 0px  0px rgba(99,102,241,0);    }
-  50%     { box-shadow: 0 0 22px 6px rgba(99,102,241,0.12); }
-}
-@keyframes _wsgate_blink {
-  0%,100% { opacity: 1; }
-  50%     { opacity: 0; }
-}
-@keyframes _wsgate_shimmer {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
-}
-.wsg-fadeUp  { animation: _wsgate_fadeUp 0.45s ease both; }
-.wsg-glow    { animation: _wsgate_glowPulse 3.5s ease-in-out infinite; }
-.wsg-cursor  { animation: _wsgate_blink 1s step-end infinite; }
-.wsg-shimmer {
-  background: linear-gradient(
-    120deg,
-    #e4e4e7 0%,
-    #a1a1aa 30%,
-    #818cf8 50%,
-    #a1a1aa 70%,
-    #e4e4e7 100%
-  );
-  background-size: 250% auto;
-  animation: _wsgate_shimmer 5s linear infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-`;
-
-function useGlobalStyles() {
-  useEffect(() => {
-    const id = "__wsgate_css__";
-    if (!document.getElementById(id)) {
-      const el = document.createElement("style");
-      el.id = id;
-      el.textContent = CSS;
-      document.head.appendChild(el);
-    }
-  }, []);
-}
-
-// ── Typewriter hook ───────────────────────────────────
-
-function useTypewriter(full: string, speed = 38) {
-  const [text, setText] = useState("");
-  const [done, setDone] = useState(false);
-  useEffect(() => {
-    setText("");
-    setDone(false);
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setText(full.slice(0, i));
-      if (i >= full.length) {
-        clearInterval(id);
-        setDone(true);
-      }
-    }, speed);
-    return () => clearInterval(id);
-  }, [full, speed]);
-  return { text, done };
-}
+import { useTypewriter } from "@/hooks/useTypewriter";
 
 // ── Feature data ──────────────────────────────────────
 
@@ -202,10 +129,48 @@ function FeatureTile({
   );
 }
 
-// ── Component ─────────────────────────────────────────
-
+/**
+ * EmptyState Component - Interactive welcome screen for nestjs-wsgate UI
+ *
+ * A visually enhanced empty state component displaying the application branding,
+ * feature highlights, and keyboard shortcuts when no event is selected.
+ *
+ * @component
+ * @returns {React.ReactElement} The rendered empty state interface with:
+ *   - Animated dot-grid background atmosphere with radial glow
+ *   - Application logo with corner accent borders and pulse animation
+ *   - Gradient shimmer animated title text
+ *   - Typewriter effect tagline with blinking cursor
+ *   - Version and license badges
+ *   - Call-to-action instruction panel
+ *   - 6 feature tiles with per-accent hover glow effects
+ *   - Keyboard shortcut reference display
+ *   - Glowing divider with center beam accent
+ *   - Author card attribution
+ *
+ * @features
+ *   - **Animations**: Staggered fade-up entry animation, typewriter effect,
+ *     gradient shimmer, glow pulse, cursor blink
+ *   - **Interactive**: Feature tiles respond to hover with accent-colored
+ *     box-shadow and border effects
+ *   - **Responsive**: Centered flex layout with constrained max-width
+ *   - **Accessibility**: Semantic HTML, keyboard element visualization,
+ *     select-none for visual presentation
+ *
+ * @example
+ * ```tsx
+ * <EmptyState />
+ * ```
+ *
+ * @see {@link AuthorCard} - Author attribution component
+ * @see {@link FeatureTile} - Individual feature tile sub-component
+ * @see {@link Kbd} - Keyboard key display sub-component
+ *
+ * @author Shaishab Chandra Shil (@shaishab316)
+ * @license MIT - https://opensource.org/licenses/MIT
+ * @version 2.0.0
+ */
 export default function EmptyState() {
-  useGlobalStyles();
   const { text: tagline, done: taglineDone } = useTypewriter(
     "Interactive UI for Socket.IO gateways.",
   );

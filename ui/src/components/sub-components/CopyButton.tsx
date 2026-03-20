@@ -1,6 +1,21 @@
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
+/**
+ * Copy Button — Icon button that copies text to clipboard with confirmation.
+ *
+ * Displays a Copy icon by default. On click, copies the provided text to
+ * clipboard and shows a Check icon for 1.5 seconds before reverting.
+ * Used for quick access to event names, payloads, and code samples.
+ *
+ * @example
+ * ```tsx
+ * <CopyButton text="user.created" />
+ * // On click → clipboard gets "user.created" → shows Check icon
+ * ```
+ *
+ * @param text - String content to copy to clipboard on button click
+ */
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   function handleCopy() {

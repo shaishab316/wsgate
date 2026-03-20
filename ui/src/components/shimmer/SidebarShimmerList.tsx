@@ -1,3 +1,22 @@
+/**
+ * SidebarShimmerList component
+ *
+ * Renders a shimmer (skeleton loading) list for the sidebar with animated placeholder elements.
+ * Displays 7 rows of placeholder items, each containing:
+ * - An icon placeholder
+ * - A name/title placeholder with variable width
+ * - A badge placeholder
+ * - A description placeholder with variable width
+ *
+ * All elements use `animate-pulse` for a smooth loading animation effect.
+ *
+ * @returns {JSX.Element} A div containing 7 shimmer list items with animated placeholders
+ *
+ * @example
+ * ```tsx
+ * <SidebarShimmerList />
+ * ```
+ */
 export function SidebarShimmerList() {
   return (
     <div className="flex flex-col py-2 px-2 gap-1">

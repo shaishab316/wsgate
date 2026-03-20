@@ -1,3 +1,21 @@
+/**
+ * A dismissible error alert component that displays an error message with an icon and close button.
+ *
+ * @component
+ * @example
+ * const [error, setError] = useState<string | null>(null);
+ * return (
+ *   <EmitError
+ *     message="Something went wrong"
+ *     onDismiss={() => setError(null)}
+ *   />
+ * );
+ *
+ * @param {Object} props - The component props
+ * @param {string} props.message - The error message to display
+ * @param {() => void} props.onDismiss - Callback function triggered when the dismiss button is clicked
+ * @returns {JSX.Element} A styled error alert container with icon, message, and dismiss button
+ */
 import { AlertCircle, X } from "lucide-react";
 
 export function EmitError({

@@ -1,5 +1,23 @@
 import { LOG_BUFFER_LIMIT } from "./Config";
 
+/**
+ * A visual progress bar component that displays the current buffer usage relative to the maximum log buffer limit.
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {number} props.count - The current number of items in the buffer
+ * @returns {JSX.Element} A buffer progress bar with usage percentage and warning indicator
+ *
+ * @example
+ * ```tsx
+ * <BufferBar count={450} />
+ * ```
+ *
+ * @remarks
+ * - Displays a filled progress bar that fills up to 100% as the buffer approaches the limit
+ * - The bar and text turn amber/orange when buffer usage reaches 80% or higher as a warning indicator
+ * - Shows a count display in the format "current/limit" (e.g., "450/500")
+ */
 export function BufferBar({ count }: { count: number }) {
   const pct = Math.min((count / LOG_BUFFER_LIMIT) * 100, 100);
   const warn = pct >= 80;

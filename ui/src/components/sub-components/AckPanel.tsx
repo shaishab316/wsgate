@@ -2,13 +2,39 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { CopyButton } from "./CopyButton";
 
+/**
+ * Displays an acknowledgment (ACK) response panel with expandable content.
+ *
+ * The component renders a collapsible panel showing ACK data with:
+ * - A header displaying "ACK Response" label and emit count
+ * - A pulsing indicator dot
+ * - A copy button for the formatted ACK content
+ * - An expand/collapse chevron icon
+ * - Expandable pre-formatted JSON content
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {unknown} props.ack - The acknowledgment data to display (can be any type)
+ * @param {number} props.emitCount - The sequential number of this ACK emission
+ * @returns {React.ReactElement | null} The rendered ACK panel, or null if ack is undefined/null
+ *
+ * @example
+ * // Basic usage
+ * <AckPanel ack={{ status: 'ok', id: 123 }} emitCount={1} />
+ *
+ * @remarks
+ * - The panel is expanded by default
+ * - JSON stringification is attempted; falls back to String() if it fails
+ * - The expand/collapse is keyboard accessible (Enter/Space keys)
+ * - Styled with Tailwind CSS using emerald color scheme
+ */
 export function AckPanel({
   ack,
   emitCount,
 }: {
   ack: unknown;
   emitCount: number;
-}) {
+}): React.ReactElement | null {
   const [expanded, setExpanded] = useState<boolean>(true);
   const formatted = useMemo<string | null>(() => {
     if (ack === undefined || ack === null) return null;

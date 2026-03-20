@@ -2,15 +2,33 @@ import { Layers, RefreshCw, Server, ServerCrash, X, Zap } from "lucide-react";
 import { useState } from "react";
 
 /**
- * Interactive error state shown when `{url}/wsgate/events.json` fails.
+ * ErrorState component — displays a connection failure UI with server URL editing and troubleshooting hints.
  *
- * Key design decision — this component does NOT write to the Zustand store.
- * Editing the URL here only affects the events fetch, never the socket
- * connection string. The edited URL is passed directly to `onRetry(url)`
- * so the parent can re-fetch without polluting global state.
+ * @component
+ * @example
+ * ```tsx
+ * <ErrorState
+ *   url="http://localhost:3000"
+ *   onRetry={(newUrl) => reconnect(newUrl)}
+ * />
+ * ```
  *
- * @param url     - The URL that failed (used as initial input value).
- * @param onRetry - Called with the (possibly edited) URL to re-fetch.
+ * @param {Object} props - Component props
+ * @param {string} props.url - The original failed server URL
+ * @param {(url: string) => void} props.onRetry - Callback fired when retry is clicked with the (possibly edited) URL
+ *
+ * @returns {JSX.Element} A centered error state UI with:
+ *   - Error icon with animated pulse ring
+ *   - Editable server URL input field
+ *   - Troubleshooting checklist
+ *   - Retry button (highlights blue when URL is modified)
+ *
+ * @remarks
+ * - The component maintains local state for the edited URL and does not affect the parent store.
+ * - The retry button shows a 600ms spinner for visual feedback before invoking `onRetry`.
+ * - Users can reset the URL to its original value via the X button when the input is dirty.
+ * - Pressing Enter in the URL input triggers retry.
+ * - The button text and styling change based on whether the URL has been modified (isDirty).
  */
 export function ErrorState({
   url,

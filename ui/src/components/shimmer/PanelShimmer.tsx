@@ -1,3 +1,23 @@
+/**
+ * Renders a shimmer (skeleton) loading state for a panel component.
+ *
+ * This component displays a placeholder UI with animated pulsing elements
+ * that simulate the layout of a panel while content is loading.
+ *
+ * The shimmer includes:
+ * - A header section with a title and badge
+ * - A subtitle line
+ * - Three filter/action buttons
+ * - A content area with multiple placeholder lines
+ * - A footer button
+ *
+ * @returns {JSX.Element} A div containing the shimmer loading skeleton with flex layout
+ *
+ * @example
+ * ```tsx
+ * <PanelShimmer />
+ * ```
+ */
 export function PanelShimmer() {
   return (
     <div className="flex flex-col h-full p-5 gap-5 overflow-hidden">
