@@ -56,6 +56,16 @@ import {
   resolveFakerVars,
   type FakerVarDef,
 } from "@/lib/faker";
+import {
+  buildPayloadSkeleton,
+  loadFromStorage,
+  relativeTime,
+  saveToStorage,
+  storageKey,
+  tryParseJson,
+  resolveJsonType,
+  shortId,
+} from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -78,79 +88,6 @@ interface MultiEmitResult {
   ack: unknown;
   sentAt: string;
   ok: boolean;
-}
-
-// ── Helpers ───────────────────────────────────────────
-
-function resolveJsonType(type: string): object {
-  const trimmed = type.trim();
-  if (trimmed.includes("|"))
-    return { enum: trimmed.split("|").map((t) => t.trim()) };
-  switch (trimmed) {
-    case "number":
-    case "integer":
-      return { type: "number" };
-    case "boolean":
-      return { type: "boolean" };
-    default:
-      return { type: "string" };
-  }
-}
-
-function buildPayloadSkeleton(
-  payload: Record<string, string>,
-): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(payload).map(([key, type]) => {
-      const t = type.trim();
-      if (t.includes("|")) return [key, t.split("|")[0].trim()];
-      if (t === "number" || t === "integer") return [key, 0];
-      if (t === "boolean") return [key, false];
-      return [key, ""];
-    }),
-  );
-}
-
-function tryParseJson(raw: string): unknown | null {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function storageKey(eventName: string, suffix: string) {
-  return `wsgate:${eventName}:${suffix}`;
-}
-
-function loadFromStorage<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* quota */
-  }
-}
-
-function shortId() {
-  return Math.random().toString(36).slice(2, 9);
-}
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 5_000) return "just now";
-  if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`;
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  return `${Math.floor(diff / 3_600_000)}h ago`;
 }
 
 const HISTORY_LIMIT = 8;
