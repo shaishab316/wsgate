@@ -2,13 +2,15 @@ import { ChevronRight, Layers } from "lucide-react";
 import { Badge } from "../ui/badge";
 
 /**
- * Collapsible section header for grouping events by gateway name.
- * Nested under a namespace section.
+ * Renders a collapsible gateway header component with a toggle button.
  *
- * @param name      - The gateway class name.
- * @param count     - Number of events in this group.
- * @param collapsed - Whether the section is collapsed.
- * @param onToggle  - Toggles collapsed state.
+ * @component
+ * @param {Object} props - The component props
+ * @param {string} props.name - The display name of the gateway
+ * @param {number} props.count - The count badge value to display
+ * @param {boolean} props.collapsed - Whether the gateway section is currently collapsed
+ * @param {() => void} props.onToggle - Callback function invoked when the header is clicked to toggle collapse state
+ * @returns {JSX.Element} A button element containing gateway information with a collapsible chevron icon
  */
 export function GatewayHeader({
   name,

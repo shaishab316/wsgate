@@ -9,16 +9,19 @@
 
 import { Keyboard } from "lucide-react";
 
-// ── Component ─────────────────────────────────────────
-
 /**
- * Keyboard shortcut hint badge rendered below the Emit button.
+ * Displays a visual hint for a keyboard shortcut.
  *
- * Reminds the user that `Ctrl+Enter` (or `Cmd+Enter` on macOS)
- * can be used to emit the current event without clicking the button.
+ * Shows a keyboard icon alongside text indicating that pressing
+ * Ctrl + Enter will emit an action.
  *
- * Rendered only when the socket is connected and the selected
- * event is of type `emit`.
+ * @component
+ * @returns {React.ReactElement} A flex container displaying the shortcut hint with styled keyboard keys.
+ *
+ * @example
+ * ```tsx
+ * <ShortcutHint />
+ * ```
  */
 export default function ShortcutHint() {
   return (

@@ -4,14 +4,25 @@ import { Badge } from "../ui/badge";
 import { ChevronRight } from "lucide-react";
 
 /**
- * Namespace section header — prominently displays the namespace
- * with icon, display name, and total event count.
+ * Renders a collapsible namespace section header with metadata.
  *
- * @param ns           - The namespace string (e.g. `'/chat'`).
- * @param count        - Total events in this namespace.
- * @param color        - Color config from palette.
- * @param isExpanded   - Whether this namespace section is expanded.
- * @param onToggle     - Called to toggle expansion.
+ * @component
+ * @param {Object} props - The component props
+ * @param {string} props.ns - The namespace identifier
+ * @param {number} props.count - The number of events in this namespace
+ * @param {typeof NAMESPACE_PALETTE[0]} props.color - Color configuration object for the namespace dot indicator
+ * @param {boolean} props.isExpanded - Whether the namespace section is currently expanded
+ * @param {() => void} props.onToggle - Callback function invoked when the header is clicked to toggle expansion
+ * @returns {JSX.Element} A button element displaying the namespace header with dot indicator, name, event count badge, and chevron icon
+ *
+ * @example
+ * <NamespaceSectionHeader
+ *   ns="auth"
+ *   count={5}
+ *   color={{ dot: 'bg-blue-500' }}
+ *   isExpanded={true}
+ *   onToggle={() => setExpanded(!expanded)}
+ * />
  */
 export function NamespaceSectionHeader({
   ns,

@@ -15,6 +15,38 @@ import { PayloadSection } from "./PayloadSection";
 
 type TimestampMode = "absolute" | "relative";
 
+/**
+ * Renders a single log entry with collapsible payload and acknowledgment sections.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <LogEntry
+ *   log={logData}
+ *   isExpanded={false}
+ *   isAckExpanded={false}
+ *   isPinned={false}
+ *   tsMode="absolute"
+ *   onToggle={() => {}}
+ *   onToggleAck={() => {}}
+ *   onTogglePin={() => {}}
+ *   onFilterByEvent={(event) => {}}
+ * />
+ * ```
+ *
+ * @param {Object} props - Component props
+ * @param {Log & { _sentAt?: string }} props.log - Log entry data with optional sent timestamp
+ * @param {boolean} props.isExpanded - Whether the payload section is expanded
+ * @param {boolean} props.isAckExpanded - Whether the acknowledgment section is expanded
+ * @param {boolean} props.isPinned - Whether the entry is pinned
+ * @param {TimestampMode} props.tsMode - Timestamp display mode ("relative" or "absolute")
+ * @param {() => void} props.onToggle - Callback fired when entry is clicked to toggle expansion
+ * @param {() => void} props.onToggleAck - Callback fired when ACK badge is clicked
+ * @param {() => void} props.onTogglePin - Callback fired when pin button is clicked
+ * @param {(event: string) => void} props.onFilterByEvent - Callback fired when event name is clicked to filter
+ *
+ * @returns {React.ReactElement} A styled log entry card with direction indicator, event name, latency chip, ACK badge, timestamp, and pin button
+ */
 export const LogEntry = memo(function LogEntry({
   log,
   isExpanded,

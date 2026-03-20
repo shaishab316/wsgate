@@ -3,6 +3,31 @@ import type { Log } from "@/store/wsgate.store";
 import { ArrowUp, Copy, FileJson } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+/**
+ * ExportMenu component for exporting logs in various formats.
+ *
+ * Provides a dropdown menu with options to:
+ * - Download all logs as JSON
+ * - Download only emitted events as JSON
+ * - Copy all logs to clipboard
+ *
+ * The menu automatically closes when clicking outside of it.
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {Log[]} props.logs - Array of log entries to export
+ * @param {() => void} props.onClose - Callback function triggered when the menu should close
+ *
+ * @returns {JSX.Element} A dropdown menu positioned absolutely with export options
+ *
+ * @example
+ * const [logs, setLogs] = useState<Log[]>([]);
+ * const [isOpen, setIsOpen] = useState(false);
+ *
+ * return (
+ *   isOpen && <ExportMenu logs={logs} onClose={() => setIsOpen(false)} />
+ * );
+ */
 export function ExportMenu({
   logs,
   onClose,

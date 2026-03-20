@@ -1,6 +1,14 @@
 import { formatLatency } from "@/lib/utils";
 import { Timer } from "lucide-react";
 
+/**
+ * Determines the color styling based on latency in milliseconds.
+ * - Green (emerald): < 100ms - Excellent latency
+ * - Yellow (amber): 100-499ms - Acceptable latency
+ * - Red: >= 500ms - Poor latency
+ * @param {number} ms - The latency value in milliseconds
+ * @returns {string} Tailwind CSS class string for text color, border color, and background color
+ */
 export function LatencyChip({ ms }: { ms: number }) {
   const color =
     ms < 100

@@ -9,6 +9,27 @@ export interface HistoryEntry {
   event: string;
 }
 
+/**
+ * A dropdown component that displays the history of sent payloads.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <HistoryDropdown
+ *   history={historyEntries}
+ *   onRestore={(payload) => console.log(payload)}
+ *   onClear={() => console.log('cleared')}
+ *   onClose={() => console.log('closed')}
+ * />
+ * ```
+ *
+ * @param {HistoryEntry[]} history - Array of historical payload entries to display
+ * @param {(payload: string) => void} onRestore - Callback function triggered when a history entry is restored, receives the payload string
+ * @param {() => void} onClear - Callback function triggered when the Clear button is clicked to remove all history
+ * @param {() => void} onClose - Callback function triggered when the dropdown should close (e.g., on outside click or restore)
+ *
+ * @returns {JSX.Element} A positioned dropdown menu displaying payload history with restore and clear functionality
+ */
 export function HistoryDropdown({
   history,
   onRestore,

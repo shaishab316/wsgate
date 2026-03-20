@@ -8,6 +8,35 @@ export interface MultiEmitResult {
   ok: boolean;
 }
 
+/**
+ * A panel component for emitting multiple messages with configurable count and delay.
+ *
+ * Provides a collapsible UI for sending batch emissions with real-time progress tracking
+ * and result visualization. Supports cancellation of ongoing operations.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * const handleMultiEmit = async (count: number, delayMs: number) => {
+ *   // Implementation
+ *   return results;
+ * };
+ *
+ * <MultiEmitPanel
+ *   onMultiEmit={handleMultiEmit}
+ *   disabled={false}
+ * />
+ * ```
+ *
+ * @param {Object} props - The component props
+ * @param {Function} props.onMultiEmit - Async callback to handle multiple emissions
+ * @param {number} props.onMultiEmit.count - Number of times to emit
+ * @param {number} props.onMultiEmit.delayMs - Delay in milliseconds between emissions
+ * @param {Promise<MultiEmitResult[]>} props.onMultiEmit.return - Array of emission results
+ * @param {boolean} props.disabled - Whether the run button should be disabled
+ *
+ * @returns {React.ReactElement} The rendered multi-emit panel component
+ */
 export function MultiEmitPanel({
   onMultiEmit,
   disabled,

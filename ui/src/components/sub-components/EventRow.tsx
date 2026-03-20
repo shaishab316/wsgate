@@ -5,11 +5,29 @@ import { Check, Copy, Radio, Send } from "lucide-react";
 import { Badge } from "../ui/badge";
 
 /**
- * Single event row inside a gateway group.
+ * Displays a single event row in a list of WebSocket events.
  *
- * @param event      - The WsEvent to render.
- * @param isSelected - Whether this event is currently selected.
- * @param onSelect   - Called when the row is clicked.
+ * @component
+ * @param {Object} props - The component props
+ * @param {WsEvent} props.event - The WebSocket event to display
+ * @param {boolean} props.isSelected - Whether this event row is currently selected
+ * @param {() => void} props.onSelect - Callback function triggered when the row is selected
+ *
+ * @returns {React.ReactElement} A clickable event row with type badge, name, optional description, and copy functionality
+ *
+ * @example
+ * <EventRow
+ *   event={wsEvent}
+ *   isSelected={true}
+ *   onSelect={() => console.log('Selected')}
+ * />
+ *
+ * @remarks
+ * - The row is fully keyboard accessible with Enter and Space key support
+ * - Displays a copy button on hover to copy the event name to clipboard
+ * - Shows visual feedback with a checkmark for 2 seconds after copying
+ * - Type badge and icon color change based on event type (emit or receive)
+ * - Selected state applies blue highlight styling
  */
 export function EventRow({
   event,

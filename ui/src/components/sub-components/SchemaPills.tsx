@@ -1,5 +1,18 @@
 import { getTypeConfig } from "@/lib/utils";
 
+/**
+ * Renders a collection of schema property pills displaying type information.
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {Record<string, string>} props.payload - A key-value object where keys are property names and values are their types
+ * @param {string} props.label - The label text to display above the pills
+ * @returns {JSX.Element | null} A flex container with styled pills for each property, or null if payload is empty
+ *
+ * @example
+ * const schema = { name: 'string', age: 'number', active: 'boolean' };
+ * <SchemaPills payload={schema} label="Request Body" />
+ */
 export function SchemaPills({
   payload,
   label,

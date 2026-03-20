@@ -2,10 +2,28 @@ import { highlightJson, safeStringify } from "@/lib/utils";
 import { memo, useMemo } from "react";
 
 /**
- * Read-only JSON viewer using a native `<pre>` tag.
- * Height is content-driven — expands naturally, no math, no clipping.
- * `max-h-[260px] overflow-y-auto` adds a scroll window for huge payloads
- * without capping smaller ones.
+ * Component that renders JSON data as highlighted, formatted HTML.
+ *
+ * This component safely converts unknown data to a JSON string, applies syntax highlighting,
+ * and displays it in a scrollable pre-formatted container with monospace font.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * const data = { name: "John", age: 30 };
+ * <JsonViewer data={data} />
+ * ```
+ *
+ * @param {Object} props - Component props
+ * @param {unknown} props.data - The data to be displayed as formatted JSON
+ *
+ * @returns {JSX.Element} A pre element containing highlighted JSON content with scrollable overflow
+ *
+ * @remarks
+ * - Uses `useMemo` to memoize the highlighting operation based on data changes
+ * - Uses `dangerouslySetInnerHTML` to render HTML-formatted syntax-highlighted JSON
+ * - Supports horizontal and vertical scrolling with max height constraint (65 units)
+ * - Text wrapping is enabled with word break handling
  */
 export const JsonViewer = memo(function JsonViewer({
   data,

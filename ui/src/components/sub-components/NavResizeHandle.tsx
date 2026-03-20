@@ -1,5 +1,26 @@
 import { PanelResizeHandle } from "react-resizable-panels";
 
+/**
+ * NavResizeHandle Component
+ *
+ * A visual resize handle for panel resizing with interactive feedback.
+ * Displays three dots that change appearance on hover and active states.
+ *
+ * @component
+ * @returns {JSX.Element} A PanelResizeHandle element with styled resize indicator dots
+ *
+ * @example
+ * ```tsx
+ * <NavResizeHandle />
+ * ```
+ *
+ * @remarks
+ * - Height is fixed at 36px
+ * - Cursor changes to column-resize on hover
+ * - Opacity transitions from 30% (default) to 100% (hover)
+ * - Dots change color from zinc-400 to blue-400 on hover, and blue-300 when active
+ * - Uses Tailwind CSS for styling
+ */
 export function NavResizeHandle() {
   return (
     <PanelResizeHandle

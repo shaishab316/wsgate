@@ -2,6 +2,26 @@ import type { SelectedEvent } from "@/store/wsgate.store";
 import { ChevronRight, Radio, Send, Zap } from "lucide-react";
 import { Badge } from "../ui/badge";
 
+/**
+ * Renders the header section of an event display component.
+ *
+ * Shows event metadata including namespace, event type (emit/receive), description,
+ * and the complete call chain (namespace -> gateway -> handler).
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {SelectedEvent} props.event - The event object containing type, namespace, event name, description, gateway name, and handler name
+ * @returns {JSX.Element} A flex container with event header information including:
+ *   - Namespace display badge
+ *   - Event type icon and name with description
+ *   - Event type badge (emit/receive)
+ *   - Breadcrumb trail showing namespace → gateway → handler
+ *
+ * @example
+ * ```tsx
+ * <EventHeader event={selectedEvent} />
+ * ```
+ */
 export function EventHeader({ event }: { event: SelectedEvent }) {
   const isEmit = event.type === "emit";
   const nsDisplay =

@@ -1,6 +1,28 @@
 import { Check, GitBranch } from "lucide-react";
 import { useState } from "react";
 
+/**
+ * A dropdown component for selecting a namespace from available options.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <NamespacePicker
+ *   selectedNamespace="/chat"
+ *   availableNamespaces={["/", "/chat", "/admin"]}
+ *   onSelect={(ns) => console.log(ns)}
+ *   disabled={false}
+ * />
+ * ```
+ *
+ * @param {Object} props - The component props
+ * @param {string | null} props.selectedNamespace - The currently selected namespace, or null if none selected
+ * @param {string[]} props.availableNamespaces - Array of namespace paths available for selection
+ * @param {(ns: string) => void} props.onSelect - Callback function invoked when a namespace is selected
+ * @param {boolean} props.disabled - Whether the picker is disabled and non-interactive
+ *
+ * @returns {React.ReactElement | null} A dropdown button component that opens a menu of selectable namespaces, or null if no namespaces are available
+ */
 export function NamespacePicker({
   selectedNamespace,
   availableNamespaces,

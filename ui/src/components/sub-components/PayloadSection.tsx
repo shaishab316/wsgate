@@ -3,32 +3,24 @@ import { JsonViewer } from "./JsonViewer";
 import { CopyButton } from "./CopyButton";
 
 /**
- * PayloadSection — Labeled JSON payload viewer with copy button.
+ * Displays a collapsible payload section with formatted JSON data and copy functionality.
  *
- * Renders a collapsible section displaying JSON data with:
- * - Header bar with label and optional extra content
- * - Syntax-highlighted JSON viewer in a dark VSCode-like theme
- * - Copy button for quick clipboard access
+ * @component
+ * @param {Object} props - The component props
+ * @param {unknown} props.data - The data object to be displayed in JSON format
+ * @param {string} props.label - The label text displayed at the top of the section
+ * @param {string} props.labelColor - Tailwind CSS color class for styling the label
+ * @param {React.ReactNode} [props.extra] - Optional additional content displayed next to the label
  *
- * The component is theme-aware (light/dark mode) and uses a `<pre>` tag
- * for height-agnostic rendering — it expands exactly to content size,
- * avoiding Monaco Editor's height calculation issues and significantly
- * reducing bundle size (~100× lighter for event logs).
+ * @returns {React.ReactElement} A section component containing a header with label and copy button, and a body with JSON viewer
  *
  * @example
- * ```tsx
  * <PayloadSection
+ *   data={{ id: 1, name: 'test' }}
  *   label="Response"
- *   labelColor="text-emerald-400"
- *   data={{ userId: "123", success: true }}
- *   extra={<Badge>ack</Badge>}
+ *   labelColor="text-green-500"
+ *   extra={<Badge>Success</Badge>}
  * />
- * ```
- *
- * @param data - Any JSON-serializable object to display
- * @param label - Header label (uppercase, displayed as title)
- * @param labelColor - Tailwind text color class for label (e.g., "text-blue-400")
- * @param extra - Optional React node rendered next to label (badges, chips, etc.)
  */
 export function PayloadSection({
   data,

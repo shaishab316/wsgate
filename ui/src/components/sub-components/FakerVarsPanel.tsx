@@ -3,9 +3,32 @@ import { FlaskConical, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Slide-in reference panel listing all available {{$var}} tokens.
- * Clicking a variable inserts it into the editor at cursor, or
- * copies it to clipboard if no editor ref is available.
+ * A panel component for inserting faker variables into an editor.
+ *
+ * Displays a searchable list of available faker variables grouped by type (string, number, boolean, uuid).
+ * Variables can be inserted into the editor by clicking on them or via keyboard shortcuts.
+ * The panel closes when clicking outside of it.
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {(snippet: string) => void} props.onInsert - Callback fired when a variable is selected for insertion
+ * @param {() => void} props.onClose - Callback fired when the panel should close
+ *
+ * @returns {JSX.Element} A dropdown panel with a search input, grouped variable list, and footer hint
+ *
+ * @example
+ * ```tsx
+ * <FakerVarsPanel
+ *   onInsert={(snippet) => editor.insert(snippet)}
+ *   onClose={() => setShowPanel(false)}
+ * />
+ * ```
+ *
+ * @remarks
+ * - Variables are filtered in real-time by name and description
+ * - Each variable group is color-coded by type
+ * - The panel uses an outside click handler to close automatically
+ * - Variables are re-rolled on every send
  */
 export function FakerVarsPanel({
   onInsert,

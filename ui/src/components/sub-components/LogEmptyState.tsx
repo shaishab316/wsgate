@@ -1,5 +1,27 @@
 import { CircleSlash, ScrollText } from "lucide-react";
 
+/**
+ * Renders an empty state component for the log display.
+ *
+ * Shows a centered message with an icon indicating either no events or no matching events
+ * based on the filter state. The component displays different icons and messages depending
+ * on whether filters are applied.
+ *
+ * @param {Object} props - The component props
+ * @param {boolean} props.hasFilter - Whether a filter is currently applied to the logs.
+ *                                    If true, displays "no matching events" message with CircleSlash icon.
+ *                                    If false, displays "no events yet" message with ScrollText icon.
+ *
+ * @returns {JSX.Element} The empty state UI component
+ *
+ * @example
+ * // Display when no filters are applied
+ * <LogEmptyState hasFilter={false} />
+ *
+ * @example
+ * // Display when filters are applied but no matches found
+ * <LogEmptyState hasFilter={true} />
+ */
 export function LogEmptyState({ hasFilter }: { hasFilter: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 select-none py-16">

@@ -1,5 +1,16 @@
 import { Pin } from "lucide-react";
 
+/**
+ * Displays a separator component for pinned items with a count indicator.
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {number} props.count - The number of pinned items to display
+ * @returns {JSX.Element} A separator element featuring a pin icon, "Pinned" label with count, and a horizontal line
+ *
+ * @example
+ * <PinnedSeparator count={5} />
+ */
 export function PinnedSeparator({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-2 px-1 py-1">

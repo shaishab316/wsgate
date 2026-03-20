@@ -8,6 +8,33 @@ export interface Preset {
   createdAt: string;
 }
 
+/**
+ * A dropdown component for managing preset configurations.
+ *
+ * Displays a list of saved presets with options to load, save, and delete them.
+ * The dropdown closes when clicking outside of it.
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <PresetsDropdown
+ *   presets={presets}
+ *   onLoad={(payload) => console.log(payload)}
+ *   onSave={(name) => console.log(name)}
+ *   onDelete={(id) => console.log(id)}
+ *   onClose={() => console.log('closed')}
+ * />
+ * ```
+ *
+ * @param {Object} props - The component props
+ * @param {Preset[]} props.presets - Array of saved preset objects
+ * @param {string} props.currentPayload - The current payload configuration (not used in render)
+ * @param {(payload: string) => void} props.onLoad - Callback fired when a preset is loaded
+ * @param {(name: string) => void} props.onSave - Callback fired when a new preset is saved
+ * @param {(id: string) => void} props.onDelete - Callback fired when a preset is deleted
+ * @param {() => void} props.onClose - Callback fired when the dropdown should close
+ * @returns {React.ReactElement} The rendered preset dropdown menu
+ */
 export function PresetsDropdown({
   presets,
   onLoad,

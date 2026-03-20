@@ -3,23 +3,30 @@ import type { WsEvent } from "@/types/ws-event";
 import { Network } from "lucide-react";
 
 /**
- * Horizontal scrollable filter bar that lets the user isolate events
- * by Socket.IO namespace.
+ * NamespaceBar - A filterable namespace selector component
  *
- * Renders an "All" pill followed by one pill per unique namespace.
- * Each pill shows a colored dot, the namespace string, and a small
- * count badge for the number of events in that namespace.
+ * Displays a horizontal scrollable bar of namespace pills that allow users to filter events
+ * by namespace. Shows an "All" pill to view all events and individual pills for each namespace
+ * with color-coded indicators and event counts.
  *
- * Selecting a namespace hides all events from other namespaces.
- * Selecting "All" clears the filter.
+ * @component
+ * @example
+ * ```tsx
+ * <NamespaceBar
+ *   namespaces={['/socket', '/api', '/chat']}
+ *   active="/socket"
+ *   allEvents={events}
+ *   onSelect={(ns) => setActiveNamespace(ns)}
+ * />
+ * ```
  *
- * Only rendered when there are two or more distinct namespaces —
- * there is nothing to filter with a single namespace.
+ * @param {Object} props - Component props
+ * @param {string[]} props.namespaces - Array of namespace identifiers to display as filter pills
+ * @param {string | null} props.active - Currently selected namespace, or null if viewing all events
+ * @param {WsEvent[]} props.allEvents - Array of all WebSocket events used to calculate counts per namespace
+ * @param {(ns: string | null) => void} props.onSelect - Callback fired when a namespace pill is clicked. Passes null to show all events or the namespace string to filter
  *
- * @param namespaces  - Sorted unique namespace list (`'/'` always first).
- * @param active      - Currently selected namespace, or `null` for All.
- * @param allEvents   - Full unfiltered event list (used for per-ns counts).
- * @param onSelect    - Called with the selected namespace or `null` for All.
+ * @returns {React.ReactElement | null} The namespace filter bar component, or null if fewer than 2 namespaces exist
  */
 export function NamespaceBar({
   namespaces,
