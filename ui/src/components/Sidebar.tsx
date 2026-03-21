@@ -59,6 +59,7 @@ export default function Sidebar() {
 
   const {
     url,
+    base,
     selectedEvent,
     selectedNamespace,
     setSelectedEvent,
@@ -124,7 +125,7 @@ export default function Sidebar() {
     setLoading(true);
     setError(false);
 
-    fetch(`${target}/wsgate/events.json`)
+    fetch(`${target}${base}/events.json`)
       .then((res) => res.json() as Promise<WsEventsResponse>)
       .then((data) => {
         setEvents(data.events);

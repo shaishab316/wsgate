@@ -6,6 +6,7 @@ import type { LogEntry } from "@/types/log";
 interface WsgateState {
   // ── Persisted ─────────────────────────────────────────
   url: string;
+  base: string;
   token: string;
   selectedEvent: WsEvent | null;
   selectedNamespace: string;
@@ -53,6 +54,7 @@ export type Log = WsgateState["logs"][number];
  * @returns {WsgateState} The Zustand store with state properties and action methods
  *
  * @property {string} url - WebSocket server URL (from query params or default localhost:3000)
+ * @property {string} base - Base path for the WebSocket Gateway UI (derived from window location)
  * @property {string} token - Authentication token for WebSocket connections
  * @property {SelectedEvent | null} selectedEvent - Currently selected event for inspection
  * @property {string} selectedNamespace - Currently selected namespace (default: "/")
@@ -75,7 +77,8 @@ export const useWsgateStore = create<WsgateState>()(
       // ── Persisted initial state ────────────────────────
       url:
         new URLSearchParams(window.location.search).get("url") ??
-        "http://localhost:3000",
+        window.location.origin,
+      base: window.location.pathname.replace(/\/$/, "") ?? "/wsgate",
       token: "",
       selectedEvent: null,
       selectedNamespace: "/",
