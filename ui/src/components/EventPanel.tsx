@@ -126,6 +126,7 @@ export default function EventPanel() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [presetsOpen, setPresetsOpen] = useState(false);
   const [fakerOpen, setFakerOpen] = useState(false);
+  const [emitting, setEmitting] = useState(false);
 
   const editorRef = useRef<MonacoType.editor.IStandaloneCodeEditor | null>(
     null,
@@ -262,7 +263,8 @@ export default function EventPanel() {
   // ── Handlers ──────────────────────────────────────────
 
   function handleEmit() {
-    if (!selectedEvent || !connected) return;
+    if (!selectedEvent || !connected || emitting) return;
+    setEmitting(true);
 
     // Resolve faker vars before parsing
     const resolved = resolveFakerVars(payload);
@@ -290,7 +292,10 @@ export default function EventPanel() {
 
     setEmitCount((c) => c + 1);
     setEmitSuccess(true);
-    setTimeout(() => setEmitSuccess(false), 1500);
+    setTimeout(() => {
+      setEmitSuccess(false);
+      setEmitting(false);
+    }, 1500);
   }
 
   function handleFormat() {
@@ -367,15 +372,29 @@ export default function EventPanel() {
 
   const handleMultiEmit = useCallback(
     async (count: number, delayMs: number): Promise<MultiEmitResult[]> => {
-      if (!selectedEvent || !connected) return [];
+      if (!selectedEvent || !connected || emitting) return [];
+
+      setEmitting(true);
+
       const resolved = resolveFakerVars(payload);
       const parsed = tryParseJson(resolved);
-      if (!parsed) return [];
+      if (!parsed) {
+        setEmitting(false);
+        return [];
+      }
+
       const results: MultiEmitResult[] = [];
+
       for (let i = 0; i < count; i++) {
         await new Promise<void>((resolve) => {
+          let settled = false;
+
           const logId = addLog("out", selectedEvent.event, parsed);
+
           emit(selectedEvent.event, parsed, (ackData: unknown) => {
+            if (settled) return;
+            settled = true;
+
             addAck(logId, ackData);
             results.push({
               index: i,
@@ -385,25 +404,31 @@ export default function EventPanel() {
             });
             resolve();
           });
+
           setTimeout(() => {
-            if (results.length <= i) {
-              results.push({
-                index: i,
-                ack: null,
-                sentAt: new Date().toISOString(),
-                ok: false,
-              });
-              resolve();
-            }
+            if (settled) return;
+            settled = true;
+
+            results.push({
+              index: i,
+              ack: null,
+              sentAt: new Date().toISOString(),
+              ok: false,
+            });
+            resolve();
           }, 3000);
         });
-        if (i < count - 1 && delayMs > 0)
+
+        if (i < count - 1 && delayMs > 0) {
           await new Promise((r) => setTimeout(r, delayMs));
+        }
       }
+
       setEmitCount((c) => c + count);
+      setEmitting(false);
       return results;
     },
-    [selectedEvent, connected, payload, emit, addLog, addAck],
+    [selectedEvent, connected, emitting, payload, emit, addLog, addAck],
   );
 
   // ── Keyboard shortcut ─────────────────────────────────
@@ -648,36 +673,36 @@ export default function EventPanel() {
 
               <div className="w-px h-4 bg-zinc-800 mx-0.5" />
 
-              {/* Emit */}
-              <button
-                onClick={handleEmit}
-                disabled={!connected}
-                title={connected ? "Emit event (Ctrl+Enter)" : "Connect first"}
-                className={`invert dark:invert-0 relative flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
-                  emitSuccess
-                    ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]"
-                    : connected
-                      ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/40 hover:scale-[1.02] active:scale-[0.98]"
-                      : "bg-zinc-800 border-zinc-700 text-zinc-500"
-                }`}
-              >
+              <div className="relative">
                 {emitSuccess ? (
-                  <>
+                  <span className="invert dark:invert-0 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                     <Check className="w-4 h-4" />
                     Emitted!
-                  </>
+                  </span>
                 ) : (
-                  <>
+                  <button
+                    onClick={handleEmit}
+                    disabled={!connected || emitting}
+                    title={
+                      connected ? "Emit event (Ctrl+Enter)" : "Connect first"
+                    }
+                    className={`invert dark:invert-0 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                      connected
+                        ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/40 hover:scale-[1.02] active:scale-[0.98]"
+                        : "bg-zinc-800 border-zinc-700 text-zinc-500"
+                    }`}
+                  >
                     <Send className="w-4 h-4" />
                     {connected ? "Emit" : "Connect"}
-                  </>
+                  </button>
                 )}
+
                 {emitCount > 0 && !emitSuccess && (
-                  <span className="absolute -top-1.5 -right-1.5 text-[8px] font-mono font-bold bg-zinc-700 text-zinc-300 rounded-full w-4 h-4 flex items-center justify-center border border-zinc-600">
+                  <span className="absolute -top-1.5 -right-1.5 text-[8px] font-mono font-bold bg-zinc-700 text-zinc-300 rounded-full w-4 h-4 flex items-center justify-center border border-zinc-600 pointer-events-none">
                     {emitCount > 99 ? "99+" : emitCount}
                   </span>
                 )}
-              </button>
+              </div>
             </div>
           </div>
 
