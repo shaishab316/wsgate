@@ -10,7 +10,7 @@
 # ── Defaults ──────────────────────────────────
 NODE_MANAGER := pnpm
 DIST_DIR     := dist
-EXAMPLE_DIR  := examples/simple-chat-app
+EXAMPLE_DIR  := examples/nest-example
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -51,21 +51,21 @@ test-cov: ## Run tests with coverage report
 dev: ## Watch-compile the package (ts → dist) in dev mode
 	$(NODE_MANAGER) run build:watch
 
-# ── Example: simple-chat-app ──────────────────
-example-install: ## Install simple-chat-app dependencies
+# ── Example: nest-example ──────────────────
+example-install: ## Install nest-example dependencies
 	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) install
 
-example-link: build ## Build package then link into simple-chat-app
+example-link: build ## Build package then link into nest-example
 	$(NODE_MANAGER) link --global
 	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) link --global nestjs-wsgate
 
-example-dev: ## Run simple-chat-app in watch mode
+example-dev: ## Run nest-example in watch mode
 	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) run start:dev
 
-example-build: ## Build simple-chat-app
+example-build: ## Build nest-example
 	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) run build
 
-example: example-install example-link example-dev ## Full flow: install → link → run simple-chat-app
+example: example-install example-link example-dev ## Full flow: install → link → run nest-example
 
 # ── Publishing ────────────────────────────────
 pack: build ## Build and pack locally (dry-run publish)

@@ -1,4 +1,4 @@
-# simple-chat-app
+# nest-example
 
 A minimal NestJS example app to test `nestjs-wsgate` locally.
 
@@ -10,7 +10,7 @@ cd ../..
 pnpm build
 
 # 2. Install & run the example
-cd examples/simple-chat-app
+cd examples/nest-example
 pnpm install
 pnpm start:dev
 ```

@@ -17,7 +17,7 @@ pnpm --filter @wsgate/nest build --watch
 Test against the example app:
 
 ```bash
-pnpm --filter simple-chat-app start:dev
+pnpm --filter nest-example start:dev
 # → http://localhost:3000/wsgate
 ```
 
@@ -117,7 +117,7 @@ This works both in the monorepo (`workspace:*`) and after publishing to npm. Nev
 ## PR Checklist
 
 - [ ] `pnpm --filter @wsgate/nest build` passes with no errors
-- [ ] `pnpm --filter simple-chat-app start:dev` works end-to-end
+- [ ] `pnpm --filter nest-example start:dev` works end-to-end
 - [ ] JSDoc added for any new public API
 - [ ] New exports added to `src/index.ts`
 - [ ] `WsDocOptions` interface updated if decorator options changed

@@ -90,7 +90,7 @@ wsgate/
 │   ├── nest/        → @wsgate/nest  (NestJS adapter)
 │   └── ui/          → @wsgate/ui    (React UI)
 ├── examples/
-│   └── simple-chat-app/             (NestJS example)
+│   └── nest-example/             (NestJS example)
 ├── package.json     (workspace root)
 └── pnpm-workspace.yaml
 ```
@@ -110,7 +110,7 @@ pnpm --filter @wsgate/ui build
 pnpm --filter @wsgate/nest build
 
 # Run example app
-pnpm --filter simple-chat-app start:dev
+pnpm --filter nest-example start:dev
 # → http://localhost:3000/wsgate
 ```
 

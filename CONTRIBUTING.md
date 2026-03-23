@@ -38,7 +38,7 @@ pnpm --filter @wsgate/ui build
 pnpm --filter @wsgate/nest build
 
 # Run example to verify end-to-end
-pnpm --filter simple-chat-app start:dev
+pnpm --filter nest-example start:dev
 # → http://localhost:3000/wsgate
 ```
 
@@ -76,7 +76,7 @@ Scope is the package name — `nest`, `ui`, or omit for monorepo-wide changes.
 
 - [ ] `pnpm --filter @wsgate/ui build` passes
 - [ ] `pnpm --filter @wsgate/nest build` passes
-- [ ] `pnpm --filter simple-chat-app start:dev` works end-to-end
+- [ ] `pnpm --filter nest-example start:dev` works end-to-end
 - [ ] JSDoc added for any new public API
 - [ ] README updated if user-facing behaviour changed
 - [ ] Open an issue first for large or breaking changes

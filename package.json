@@ -4,6 +4,6 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev:ui": "pnpm --filter @wsgate/ui dev",
-    "dev:example": "pnpm --filter simple-chat-app dev"
+    "dev:example": "pnpm --filter nest-example dev"
   }
 }
