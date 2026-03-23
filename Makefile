@@ -1,78 +1,54 @@
-# ─────────────────────────────────────────────
-#  nestjs-wsgate — Makefile
-# ─────────────────────────────────────────────
-
-.PHONY: install build clean lint lint-fix format \
-        test test-watch test-cov dev \
-        example-install example-link example-dev example-build example \
-        pack publish release help
+.PHONY: install build build-ui build-nest clean \
+        dev-ui dev-docs \
+        example \
+        publish publish-ui publish-nest \
+        release help
 
 # ── Defaults ──────────────────────────────────
-NODE_MANAGER := pnpm
-DIST_DIR     := dist
-EXAMPLE_DIR  := examples/nest-example
+PM          := pnpm
+EXAMPLE_DIR := examples/nest-example
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 # ── Setup ─────────────────────────────────────
-install: ## Install root dependencies
-	$(NODE_MANAGER) install
+install: ## Install all workspace dependencies
+	$(PM) install
 
 # ── Build ─────────────────────────────────────
-build: clean ## Build package (ts → dist) and UI (ts, react → static)
-	$(NODE_MANAGER) run build
+build-ui: ## Build @wsgate/ui
+	$(PM) --filter @wsgate/ui build
 
-clean: ## Remove dist/
-	rm -rf $(DIST_DIR)
+build-nest: ## Build @wsgate/nest
+	$(PM) --filter @wsgate/nest build
 
-# ── Code Quality ──────────────────────────────
-lint: ## Run ESLint
-	$(NODE_MANAGER) run lint
+build: build-ui build-nest ## Build all packages (ui first, then nest)
 
-lint-fix: ## Run ESLint with auto-fix
-	$(NODE_MANAGER) run lint -- --fix
-
-format: ## Run Prettier
-	$(NODE_MANAGER) run format
-
-# ── Testing ───────────────────────────────────
-test: ## Run all tests
-	$(NODE_MANAGER) run test
-
-test-watch: ## Run tests in watch mode
-	$(NODE_MANAGER) run test:watch
-
-test-cov: ## Run tests with coverage report
-	$(NODE_MANAGER) run test:cov
+clean: ## Remove all dist folders
+	rm -rf packages/ui/dist packages/nest/dist
 
 # ── Dev ───────────────────────────────────────
-dev: ## Watch-compile the package (ts → dist) in dev mode
-	$(NODE_MANAGER) run build:watch
+dev-ui: ## Run @wsgate/ui dev server
+	$(PM) --filter @wsgate/ui dev
 
-# ── Example: nest-example ──────────────────
-example-install: ## Install nest-example dependencies
-	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) install
+dev-docs: ## Run docs dev server
+	$(PM) --filter wsgate-docs dev
 
-example-link: build ## Build package then link into nest-example
-	$(NODE_MANAGER) link --global
-	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) link --global nestjs-wsgate
-
-example-dev: ## Run nest-example in watch mode
-	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) run start:dev
-
-example-build: ## Build nest-example
-	cd $(EXAMPLE_DIR) && $(NODE_MANAGER) run build
-
-example: example-install example-link example-dev ## Full flow: install → link → run nest-example
+# ── Example ───────────────────────────────────
+example: ## Run nest-example example
+	$(PM) --filter nest-example start:dev
 
 # ── Publishing ────────────────────────────────
-pack: build ## Build and pack locally (dry-run publish)
-	$(NODE_MANAGER) pack
+publish-ui: build-ui ## Build and publish @wsgate/ui
+	$(PM) --filter @wsgate/ui publish
 
-publish: build ## Publish to npm registry
-	$(NODE_MANAGER) publish --access public
+publish-nest: build-nest ## Build and publish @wsgate/nest
+	$(PM) --filter @wsgate/nest publish
 
-release: lint test build ## Full release gate: lint → test → build → publish
-	$(NODE_MANAGER) publish --access public 
+publish: build ## Build and publish both packages (ui first)
+	$(PM) --filter @wsgate/ui publish
+	$(PM) --filter @wsgate/nest publish
+
+# ── Release ───────────────────────────────────
+release: clean build publish ## Full release: clean → build → publish
