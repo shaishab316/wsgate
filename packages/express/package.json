@@ -1,0 +1,44 @@
+{
+  "name": "@wsgate/express",
+  "version": "0.0.1",
+  "description": "Interactive WebSocket documentation UI for Express.js Socket.IO — like Swagger, but for Socket.IO events",
+  "author": "Shaishab <shaishab316@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/shaishab316/nestjs-wsgate#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shaishab316/nestjs-wsgate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shaishab316/nestjs-wsgate/issues"
+  },
+  "keywords": [
+    "express",
+    "websocket",
+    "socket.io",
+    "swagger",
+    "documentation",
+    "wsgate"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@wsgate/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "express": "^5.2.1",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
