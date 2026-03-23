@@ -2,7 +2,6 @@ import { INestApplication, Module } from '@nestjs/common';
 import { WsgateExplorer } from './wsgate.explorer';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import * as express from 'express';
 
 /**
  * Configuration options for the WsgateModule.
@@ -14,6 +13,21 @@ export interface WsgateOptions {
    * @default 'WsGate'
    */
   title?: string;
+
+  /**
+   * Disable the wsgate UI entirely.
+   * Useful for production environments.
+   *
+   * @default false
+   *
+   * @example
+   * ```ts
+   * await WsgateModule.setup('/wsgate', app, {
+   *   disabled: process.env.NODE_ENV === 'production',
+   * });
+   * ```
+   */
+  disabled?: boolean;
 }
 
 /**
@@ -68,8 +82,11 @@ export class WsgateModule {
     app: INestApplication,
     options?: WsgateOptions,
   ): Promise<void> {
+    if (options?.disabled) return;
+
     const title = options?.title ?? 'WsGate';
 
+    // Resolve WsgateExplorer from the DI container.
     const explorer = await app.resolve(WsgateExplorer).catch(() => {
       throw new Error(
         `[nestjs-wsgate] WsgateExplorer is not registered. ` +
@@ -85,6 +102,7 @@ export class WsgateModule {
     });
 
     // ── Resolve and serve the UI HTML ─────────────────────
+    // Resolves from @wsgate/ui package — works in monorepo and after npm install.
     const uiHtmlPath = path.join(
       path.dirname(require.resolve('@wsgate/ui/package.json')),
       'dist',
