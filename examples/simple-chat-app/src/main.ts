@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { WsgateModule } from 'nestjs-wsgate';
+import { WsgateModule } from '@wsgate/nest';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

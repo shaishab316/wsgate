@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { WsDoc } from 'nestjs-wsgate';
+import { WsDoc } from '@wsgate/nest';
 
 /**
  * ChatGateway demonstrates simple real-world WebSocket messaging.

@@ -92,14 +92,17 @@ export class WsgateModule {
       res.json({ title, events });
     });
 
-    // ── Serve the interactive HTML UI as static files ────
-    // Serves the entire dist/ui directory with index.html as fallback
-    const uiPath = path.join(__dirname, "ui");
-    app.use(routePath, express.static(uiPath, { index: "index.html" }));
+    // ── Resolve the UI HTML from @wsgate/ui package ───────
+    // Works both in monorepo (workspace:*) and after publishing to npm.
+    const uiHtmlPath = path.join(
+      path.dirname(require.resolve("@wsgate/ui/package.json")),
+      "dist",
+      "index.html",
+    );
 
-    // Fallback: SPA route redirects to index.html for client-side routing
+    // Serve the singlefile HTML — all JS/CSS is already inlined by vite-plugin-singlefile
     app.use(routePath, (_req: any, res: any) => {
-      res.sendFile(path.join(uiPath, "index.html"));
+      res.sendFile(uiHtmlPath);
     });
   }
 }

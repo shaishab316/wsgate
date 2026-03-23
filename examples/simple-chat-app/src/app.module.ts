@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { ChatModule } from './chat/chat.module';
-import { WsgateExplorer } from 'nestjs-wsgate';
+import { WsgateExplorer } from '@wsgate/nest';
 import { AdminModule } from './admin/admin.module';
 
 @Module({

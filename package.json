@@ -1,53 +1,9 @@
 {
-  "name": "nestjs-wsgate",
-  "version": "0.0.1",
-  "description": "Interactive WebSocket documentation UI for NestJS — like Swagger, but for Socket.IO",
-  "author": "Shaishab <shaishab316@gmail.com>",
-  "license": "MIT",
-  "homepage": "https://github.com/shaishab316/nestjs-wsgate#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/shaishab316/nestjs-wsgate.git"
-  },
-  "bugs": {
-    "url": "https://github.com/shaishab316/nestjs-wsgate/issues"
-  },
-  "keywords": [
-    "nestjs",
-    "websocket",
-    "socket.io",
-    "swagger",
-    "documentation",
-    "gateway",
-    "wsgate"
-  ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "name": "wsgate-monorepo",
+  "private": true,
   "scripts": {
-    "build:ui": "cd ui && pnpm run build",
-    "build": "concurrently \"pnpm run build:ui\" \"tsc\"",
-    "build:only": "tsc",
-    "prepublishOnly": "pnpm build"
-  },
-  "packageManager": "pnpm@10.20.0",
-  "peerDependencies": {
-    "@nestjs/common": "^10.0.0 || ^11.0.0",
-    "@nestjs/core": "^10.0.0 || ^11.0.0",
-    "reflect-metadata": "^0.1.13 || ^0.2.0"
-  },
-  "devDependencies": {
-    "@nestjs/common": "^11.1.17",
-    "@nestjs/core": "^11.1.17",
-    "@types/node": "^25.5.0",
-    "concurrently": "^9.2.1",
-    "express": "^5.2.1",
-    "reflect-metadata": "^0.2.2",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@types/express": "^5.0.6"
+    "build": "pnpm -r build",
+    "dev:ui": "pnpm --filter @wsgate/ui dev",
+    "dev:example": "pnpm --filter simple-chat-app dev"
   }
 }

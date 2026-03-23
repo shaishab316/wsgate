@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { WsDoc } from 'nestjs-wsgate';
+import { WsDoc } from '@wsgate/nest';
 
 /**
  * AdminGateway handles admin operations like announcements and server monitoring.
