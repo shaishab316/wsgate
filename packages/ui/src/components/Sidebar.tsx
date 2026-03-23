@@ -7,25 +7,33 @@
  * @packageDocumentation
  */
 
-import { useEffect, useState, useRef } from "react";
-import { Radio, Send, Search, X, Sparkles, Keyboard } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useWsgateStore } from "@/store/wsgate.store";
-import { useSocketStore } from "@/hooks/useSocket";
-import type { WsEvent, WsEventsResponse } from "@/types/ws-event";
-import { NamespaceBar } from "./sub-components/NamespaceBar";
+import { useEffect, useState, useRef } from 'react';
+import {
+  Radio,
+  Send,
+  Search,
+  X,
+  Sparkles,
+  Keyboard,
+  Download,
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useWsgateStore } from '@/store/wsgate.store';
+import { useSocketStore } from '@/hooks/useSocket';
+import type { WsEvent, WsEventsResponse } from '@/types/ws-event';
+import { NamespaceBar } from './sub-components/NamespaceBar';
 import {
   filterEvents,
   getUniqueNamespaces,
   groupByNamespaceThenGateway,
   namespaceColor,
-} from "@/lib/utils";
-import { SidebarShimmerList } from "./shimmer/SidebarShimmerList";
-import { ErrorState } from "./sub-components/ErrorState";
-import { EmptySearch } from "./sub-components/EmptySearch";
-import { NamespaceSectionHeader } from "./sub-components/NamespaceSectionHeader";
-import { GatewayHeader } from "./sub-components/GatewayHeader";
-import { EventRow } from "./sub-components/EventRow";
+} from '@/lib/utils';
+import { SidebarShimmerList } from './shimmer/SidebarShimmerList';
+import { ErrorState } from './sub-components/ErrorState';
+import { EmptySearch } from './sub-components/EmptySearch';
+import { NamespaceSectionHeader } from './sub-components/NamespaceSectionHeader';
+import { GatewayHeader } from './sub-components/GatewayHeader';
+import { EventRow } from './sub-components/EventRow';
 
 /**
  * Sidebar component for the WebSocket Gateway UI.
@@ -71,10 +79,10 @@ export default function Sidebar() {
   // ── Local state ───────────────────────────────────────
 
   const [events, setEvents] = useState<WsEvent[]>([]);
-  const [title, setTitle] = useState("nestjs-wsgate");
+  const [title, setTitle] = useState('nestjs-wsgate');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [activeNamespace, setActiveNamespace] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -85,23 +93,23 @@ export default function Sidebar() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl+K (or Cmd+K) to focus search
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         searchInputRef.current?.focus();
         setShowKeyboardHint(false);
       }
       // Escape to clear search when focused
       if (
-        e.key === "Escape" &&
+        e.key === 'Escape' &&
         search &&
         document.activeElement === searchInputRef.current
       ) {
-        setSearch("");
+        setSearch('');
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [search]);
 
   // ── Fetch events ──────────────────────────────────────
@@ -144,7 +152,60 @@ export default function Sidebar() {
 
   useEffect(() => {
     fetchEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
+
+  // ── File upload ───────────────────────────────────────
+
+  /**
+   * Handles manual events.json file upload when server is unreachable.
+   * Parses the file client-side and populates the event list directly.
+   *
+   * @param file - The uploaded .json File object.
+   */
+  function handleFileUpload(file: File) {
+    setLoading(true);
+    setError(false);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string) as WsEventsResponse;
+        setEvents(data.events);
+        setTitle(data.title ?? 'nestjs-wsgate');
+        setActiveNamespace(null);
+        setAvailableNamespaces(getUniqueNamespaces(data.events));
+        setLoading(false);
+      } catch {
+        setError(true);
+        setLoading(false);
+      }
+    };
+    reader.onerror = () => {
+      setError(true);
+      setLoading(false);
+    };
+    reader.readAsText(file);
+  }
+
+  // ── Export events ─────────────────────────────────────
+
+  /**
+   * Exports the current events list as a downloadable `events.json` file.
+   * Serializes `{ title, events }` to match the WsEventsResponse shape.
+   */
+  function handleExport() {
+    const payload: WsEventsResponse = { title, events };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = 'events.json';
+    a.click();
+    URL.revokeObjectURL(href);
+  }
 
   // ── Derived — filtered + grouped ─────────────────────
 
@@ -171,8 +232,8 @@ export default function Sidebar() {
    * @param event - The WsEvent that was clicked.
    */
   function handleEventSelect(event: WsEvent) {
-    const eventNamespace = event.namespace ?? "/";
-    const isConnected = status === "connected";
+    const eventNamespace = event.namespace ?? '/';
+    const isConnected = status === 'connected';
 
     // If event is in a DIFFERENT namespace than currently selected AND socket is connected
     if (eventNamespace !== selectedNamespace && isConnected) {
@@ -191,7 +252,13 @@ export default function Sidebar() {
   function toggleCollapse(name: string) {
     setCollapsed((prev) => {
       const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
+      // next.has(name) ? next.delete(name) : next.add(name);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+
       return next;
     });
   }
@@ -224,6 +291,17 @@ export default function Sidebar() {
               {events.length}
             </Badge>
           )}
+
+          {/* Export events.json */}
+          {!loading && !error && events.length > 0 && (
+            <button
+              onClick={handleExport}
+              title="Export events.json"
+              className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-zinc-800/50 rounded"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -234,8 +312,8 @@ export default function Sidebar() {
             <div
               className={`flex items-center gap-2 h-8 bg-zinc-900 border rounded-lg px-3 transition-all duration-200 ${
                 search
-                  ? "border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]"
-                  : "border-zinc-800 hover:border-zinc-700"
+                  ? 'border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]'
+                  : 'border-zinc-800 hover:border-zinc-700'
               }`}
             >
               <Search className="w-3 h-3 text-zinc-600 shrink-0" />
@@ -249,7 +327,7 @@ export default function Sidebar() {
               {search && (
                 <button
                   onClick={() => {
-                    setSearch("");
+                    setSearch('');
                     searchInputRef.current?.focus();
                   }}
                   className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
@@ -301,12 +379,13 @@ export default function Sidebar() {
           <ErrorState
             url={url}
             onRetry={(editedUrl) => fetchEvents(editedUrl)}
+            onFileUpload={handleFileUpload}
           />
         )}
 
         {/* Empty search result */}
         {!loading && !error && filtered.length === 0 && search && (
-          <EmptySearch onClear={() => setSearch("")} />
+          <EmptySearch onClear={() => setSearch('')} />
         )}
 
         {/* No events loaded yet */}
@@ -404,13 +483,13 @@ export default function Sidebar() {
           <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
             <Send className="w-2.5 h-2.5 text-blue-400" />
             <span className="text-[10px] text-zinc-600">
-              {events.filter((e) => e.type === "emit").length} emit
+              {events.filter((e) => e.type === 'emit').length} emit
             </span>
           </div>
           <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
             <Radio className="w-2.5 h-2.5 text-emerald-400" />
             <span className="text-[10px] text-zinc-600">
-              {events.filter((e) => e.type === "subscribe").length} subscribe
+              {events.filter((e) => e.type === 'subscribe').length} subscribe
             </span>
           </div>
           {/* Active namespace indicator */}
