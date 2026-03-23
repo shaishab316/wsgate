@@ -1,0 +1,17 @@
+{
+  "name": "wsgate-docs",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.20.0",
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
