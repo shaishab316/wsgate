@@ -20,7 +20,7 @@ NestJS has `@nestjs/swagger` for REST. Socket.IO gateways have nothing.
 
 `wsgate` adds a browser UI — like Swagger UI but for your WebSocket events. It auto-discovers every `@SubscribeMessage()` decorated with `@WsDoc()` and lets you emit events, inspect payloads, and watch live responses — without writing a single test client.
 
-[![Demo Screenshot](./images/showcase-1.png)](./images/showcase-1.png)
+![showcase-1](https://github.com/user-attachments/assets/1a9edcde-be96-4ce5-ba07-70aca3034a63)
 
 ---
 
