@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="./ui/src/assets/icon.png" alt="nestjs-wsgate logo" width="120" />
+<img src="./packages/ui/src/assets/icon.png" alt="wsgate logo" width="120" />
 
-# nestjs-wsgate
+# wsgate
 
 **Interactive Swagger-like UI for NestJS Socket.IO Gateway Events**
 
-[![npm version](https://img.shields.io/npm/v/nestjs-wsgate?color=crimson&style=flat-square)](https://www.npmjs.com/package/nestjs-wsgate)
-[![npm downloads](https://img.shields.io/npm/dm/nestjs-wsgate?style=flat-square)](https://www.npmjs.com/package/nestjs-wsgate)
+[![npm version](https://img.shields.io/npm/v/@wsgate/nest?color=crimson&style=flat-square)](https://www.npmjs.com/package/@wsgate/nest)
+[![npm downloads](https://img.shields.io/npm/dm/@wsgate/nest?style=flat-square)](https://www.npmjs.com/package/@wsgate/nest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![NestJS](https://img.shields.io/badge/NestJS-10%2B-red?style=flat-square&logo=nestjs)](https://nestjs.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
@@ -18,96 +18,114 @@
 
 NestJS has `@nestjs/swagger` for REST. Socket.IO gateways have nothing.
 
-`nestjs-wsgate` adds a browser UI — like Swagger UI but for your WebSocket events. It auto-discovers every `@SubscribeMessage()` in your app and lets you emit events, inspect payloads, and watch live responses — without writing a single test client.
+`wsgate` adds a browser UI — like Swagger UI but for your WebSocket events. It auto-discovers every `@SubscribeMessage()` decorated with `@WsDoc()` and lets you emit events, inspect payloads, and watch live responses — without writing a single test client.
 
 [![Demo Screenshot](./images/showcase-1.png)](./images/showcase-1.png)
 
 ---
 
-## Installation
+## Packages
+
+| Package                                     | Description                                       | npm                                                                                                               |
+| ------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [`@wsgate/nest`](./packages/nest/README.md) | NestJS adapter — decorators, explorer, module     | [![npm](https://img.shields.io/npm/v/@wsgate/nest?style=flat-square)](https://www.npmjs.com/package/@wsgate/nest) |
+| [`@wsgate/ui`](./packages/ui/README.md)     | React UI — served automatically by `@wsgate/nest` | [![npm](https://img.shields.io/npm/v/@wsgate/ui?style=flat-square)](https://www.npmjs.com/package/@wsgate/ui)     |
+
+---
+
+## Quick Start
 
 ```bash
-pnpm add nestjs-wsgate
+pnpm add @wsgate/nest
 ```
 
-## Setup
-
-**`app.module.ts`** — add `DiscoveryModule` and `WsgateExplorer`:
+**`app.module.ts`**
 
 ```typescript
 import { DiscoveryModule } from "@nestjs/core";
-import { WsgateExplorer } from "nestjs-wsgate";
+import { WsgateExplorer } from "@wsgate/nest";
 
 @Module({
-  imports: [DiscoveryModule, ChatModule, AdminModule],
+  imports: [DiscoveryModule, ChatModule],
   providers: [WsgateExplorer],
 })
 export class AppModule {}
 ```
 
-**`main.ts`** — mount the UI before `app.listen()`:
+**`main.ts`**
 
 ```typescript
-import { WsgateModule } from "nestjs-wsgate";
+import { WsgateModule } from "@wsgate/nest";
 
 await WsgateModule.setup("/wsgate", app, { title: "My App" });
 await app.listen(3000);
 // → http://localhost:3000/wsgate
 ```
 
-## Documenting Events
-
-Use `@WsDoc()` on your gateway handlers. Two types: `emit` (client → server) and `subscribe` (server → client).
+**Gateway**
 
 ```typescript
-import { WsDoc } from 'nestjs-wsgate';
+import { WsDoc } from "@wsgate/nest";
 
-// Client sends this
 @WsDoc({
-  event: 'message:send',
-  description: 'Send a message to a room.',
-  payload: { room: 'string', text: 'string' },
-  response: 'message:receive',
-  type: 'emit',
+  event: "message:send",
+  description: "Send a message to a room.",
+  payload: { room: "string", text: "string" },
+  response: "message:receive",
+  type: "emit",
 })
-@SubscribeMessage('message:send')
-handleSendMessage(@MessageBody() data: { room: string; text: string }) { ... }
-
-// Client listens for this (stub — no @SubscribeMessage needed)
-@WsDoc({
-  event: 'message:receive',
-  description: 'Broadcasted message from a room.',
-  payload: { username: 'string', text: 'string', timestamp: 'string' },
-  type: 'subscribe',
-})
-onMessageReceive() {}
+@SubscribeMessage("message:send")
+handleSendMessage(@MessageBody() data: { room: string; text: string }) {}
 ```
 
-### `@WsDoc` options
+For full usage see [`@wsgate/nest` docs](./packages/nest/README.md).
 
-| Option        | Type                     | Required | Description                       |
-| ------------- | ------------------------ | -------- | --------------------------------- |
-| `event`       | `string`                 | ✅       | Socket.IO event name              |
-| `type`        | `'emit' \| 'subscribe'`  | ✅       | Direction of the event            |
-| `description` | `string`                 | ✅       | Shown in the UI                   |
-| `payload`     | `Record<string, string>` | ✅       | Field names → type labels         |
-| `response`    | `string`                 | ❌       | Response event name (`emit` only) |
+---
 
-## Multiple Gateways
+## Monorepo Structure
 
-Just import all gateway modules — `WsgateExplorer` picks them all up automatically. Each namespace appears as its own section in the UI.
+```
+wsgate/
+├── packages/
+│   ├── nest/        → @wsgate/nest  (NestJS adapter)
+│   └── ui/          → @wsgate/ui    (React UI)
+├── examples/
+│   └── simple-chat-app/             (NestJS example)
+├── package.json     (workspace root)
+└── pnpm-workspace.yaml
+```
+
+---
+
+## Local Development
+
+```bash
+# Install all dependencies
+pnpm install
+
+# Build UI
+pnpm --filter @wsgate/ui build
+
+# Build nest
+pnpm --filter @wsgate/nest build
+
+# Run example app
+pnpm --filter simple-chat-app start:dev
+# → http://localhost:3000/wsgate
+```
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+Package-specific guides: [nest](./packages/nest/CONTRIBUTING.md) · [ui](./packages/ui/CONTRIBUTING.md)
 
 Open an issue before a large PR.
 
 ## License
 
-See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](./LICENSE) for details.
 
 ---
 

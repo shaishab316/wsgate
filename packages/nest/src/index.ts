@@ -7,7 +7,7 @@
  * An interactive WebSocket documentation UI for NestJS.
  * Like Swagger UI, but for Socket.IO gateway events.
  *
- * GitHub  : https://github.com/shaishab316/nestjs-wsgate
+ * GitHub  : https://github.com/shaishab316/wsgate
  * npm     : https://www.npmjs.com/package/nestjs-wsgate
  *
  * @packageDocumentation

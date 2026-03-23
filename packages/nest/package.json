@@ -4,13 +4,13 @@
   "description": "Interactive WebSocket documentation UI for NestJS — like Swagger, but for Socket.IO",
   "author": "Shaishab <shaishab316@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/shaishab316/nestjs-wsgate#readme",
+  "homepage": "https://github.com/shaishab316/wsgate#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shaishab316/nestjs-wsgate.git"
+    "url": "https://github.com/shaishab316/wsgate.git"
   },
   "bugs": {
-    "url": "https://github.com/shaishab316/nestjs-wsgate/issues"
+    "url": "https://github.com/shaishab316/wsgate/issues"
   },
   "keywords": [
     "nestjs",

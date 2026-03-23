@@ -1,73 +1,97 @@
-# Contributing to nestjs-wsgate
+# Contributing to wsgate
 
-Thanks for taking the time to contribute! This is a small focused package — please read this before opening a PR.
-
----
-
-## Project Structure
-
-```
-nestjs-wsgate/
-├── src/          # Package source (decorators, explorer, module)
-├── ui/           # Vite + React dev UI
-├── example/      # Example NestJS app
-└── dist/         # Built output (do not edit)
-```
+Thanks for your interest. This is a pnpm monorepo — read this before opening a PR.
 
 ---
 
-## Local Development
+## Packages
+
+| Package        | Location         | Purpose                                       |
+| -------------- | ---------------- | --------------------------------------------- |
+| `@wsgate/nest` | `packages/nest/` | NestJS adapter — decorators, explorer, module |
+| `@wsgate/ui`   | `packages/ui/`   | React UI — served by `@wsgate/nest`           |
+
+For package-specific guidelines:
+
+- [`packages/nest/CONTRIBUTING.md`](./packages/nest/CONTRIBUTING.md)
+- [`packages/ui/CONTRIBUTING.md`](./packages/ui/CONTRIBUTING.md)
+
+---
+
+## Setup
 
 ```bash
-git clone https://github.com/shaishab316/nestjs-wsgate.git
+git clone https://github.com/shaishab316/wsgate.git
 cd nestjs-wsgate
 pnpm install
-pnpm dev          # builds the package in watch mode + starts the UI dev server
 ```
 
-To test against the example app:
+---
+
+## Development Workflow
 
 ```bash
-cd example
-pnpm install
-pnpm dev
+# Build UI first (nest depends on it)
+pnpm --filter @wsgate/ui build
+
+# Build nest
+pnpm --filter @wsgate/nest build
+
+# Run example to verify end-to-end
+pnpm --filter simple-chat-app start:dev
 # → http://localhost:3000/wsgate
 ```
 
 ---
 
+## Branch Convention
+
+| Branch         | Purpose                 |
+| -------------- | ----------------------- |
+| `main`         | Stable, published state |
+| `feat/<name>`  | New features            |
+| `fix/<name>`   | Bug fixes               |
+| `chore/<name>` | Tooling, deps, docs     |
+
+Always branch off `main`. Open a PR back to `main`.
+
+---
+
+## Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+feat(nest): add namespace filtering to explorer
+fix(ui): resolve monaco blank panel on event change
+chore: bump pnpm to 10.32.1
+docs: update quick start in root README
+```
+
+Scope is the package name — `nest`, `ui`, or omit for monorepo-wide changes.
+
+---
+
 ## Before Opening a PR
 
-- **Open an issue first** for any non-trivial change — bug fix, new feature, API change. This avoids wasted effort if the direction doesn't fit the project.
-- Keep PRs focused. One fix or feature per PR.
-- If you're changing the `@WsDoc` API or `WsgateModule.setup()` signature, discuss in the issue first.
+- [ ] `pnpm --filter @wsgate/ui build` passes
+- [ ] `pnpm --filter @wsgate/nest build` passes
+- [ ] `pnpm --filter simple-chat-app start:dev` works end-to-end
+- [ ] JSDoc added for any new public API
+- [ ] README updated if user-facing behaviour changed
+- [ ] Open an issue first for large or breaking changes
 
 ---
 
-## Commit Style
+## Reporting Issues
 
-Use [Conventional Commits](https://www.conventionalcommits.org):
+Use the GitHub issue templates:
 
-```
-feat: add namespace filter to UI
-fix: explorer not picking up lazy-loaded modules
-docs: update WsDoc options table
-chore: bump socket.io peer dep to v4.8
-```
-
----
-
-## Reporting Bugs
-
-Open a GitHub issue and include:
-
-- NestJS version
-- `nestjs-wsgate` version
-- Minimal reproduction (your gateway + `AppModule` setup)
-- What you expected vs what happened
+- **Bug report** — unexpected behaviour with steps to reproduce
+- **Feature request** — describe the problem, not just the solution
 
 ---
 
 ## License
 
-By contributing, you agree your code will be licensed under [MIT](LICENSE).
+By contributing you agree your code will be released under the [MIT License](./LICENSE).

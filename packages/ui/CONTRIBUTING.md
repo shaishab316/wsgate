@@ -1,15 +1,13 @@
-# Contributing to nestjs-wsgate UI
+# Contributing to @wsgate/ui
 
-The UI is a Vite + React + Tailwind app living in the `ui/` directory. This guide covers patterns, conventions, and decisions you need to know before touching the code.
+The UI is a Vite + React + Tailwind app living in `packages/ui/`. This guide covers patterns, conventions, and decisions you need to know before touching the code.
 
 ---
 
 ## Local Dev
 
 ```bash
-cd ui
-pnpm install
-pnpm dev   # or: make
+pnpm --filter @wsgate/ui dev
 ```
 
 Connect to a local NestJS app running `WsgateModule.setup()` on `ws://localhost:3000`.
@@ -19,7 +17,7 @@ Connect to a local NestJS app running `WsgateModule.setup()` on `ws://localhost:
 ## Project Structure
 
 ```
-ui/src/
+packages/ui/src/
 ├── components/
 │   └── sub-components/   # Shared UI primitives
 │       └── Config.tsx     # Shared constants (icons, colors, patterns)
@@ -95,7 +93,7 @@ const { selectedEvent, setSelectedEvent } = useWsgateStore();
 ### Icon Buttons
 
 ```tsx
-<CopyButton text={payload} />  {/* Tooltip + Copy → Check animation */}
+<CopyButton text={payload} />
 
 <IconBtn title="Export" onClick={handleExport} activeClass="text-blue-400">
   <Download className="w-4 h-4" />
@@ -154,12 +152,11 @@ Don't reach for these reflexively — only when there's a measurable reason.
 
 ## Troubleshooting
 
-| Symptom                                 | Fix                                                                     |
-| --------------------------------------- | ----------------------------------------------------------------------- |
-| `Cannot find module '@react-hookz/web'` | Don't add external deps — use native hooks or custom `useMediaQuery()`  |
-| Monaco panel shows blank                | Check `editorReady` state — there's a 300ms reset delay on event change |
-| Logs appear after disconnect            | Ensure `useSocketStore` clears `onMessageCallback` on disconnect        |
-| Light theme colors look wrong           | Use `bg-white dark:bg-zinc-950` pattern, check `dark:` annotations      |
+| Symptom                       | Fix                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| Monaco panel shows blank      | Check `editorReady` state — there's a 300ms reset delay on event change |
+| Logs appear after disconnect  | Ensure `useSocketStore` clears `onMessageCallback` on disconnect        |
+| Light theme colors look wrong | Use `bg-white dark:bg-zinc-950` pattern, check `dark:` annotations      |
 
 ---
 
