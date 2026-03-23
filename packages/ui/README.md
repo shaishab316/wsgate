@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./src/assets/icon.png" width="120px" alt="WSGate UI Logo">
+  <img src="https://github.com/shaishab316/wsgate/blob/main/packages/ui/src/assets/icon.png?raw=true" width="120px" alt="WSGate UI Logo">
 
 # @wsgate/ui
 
@@ -17,7 +17,7 @@
 > You typically don't install this package directly.
 > Use [`@wsgate/nest`](../nest/README.md) instead — it includes this UI automatically.
 
-[![Demo Screenshot](../../images/showcase-1.png)](../../images/showcase-1.png)
+[![Demo Screenshot](https://github.com/shaishab316/wsgate/blob/main/images/showcase-1.png?raw=true)](https://github.com/shaishab316/wsgate/blob/main/images/showcase-1.png?raw=true)
 
 ---
 

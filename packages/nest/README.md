@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="../ui/src/assets/icon.png" alt="nestjs-wsgate logo" width="120" />
+<img src="https://github.com/shaishab316/wsgate/blob/main/packages/ui/src/assets/icon.png?raw=true" alt="nestjs-wsgate logo" width="120" />
 
 # @wsgate/nest
 
