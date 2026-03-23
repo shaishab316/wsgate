@@ -26,10 +26,11 @@ NestJS has `@nestjs/swagger` for REST. Socket.IO gateways have nothing.
 
 ## Packages
 
-| Package                                     | Description                                       | npm                                                                                                               |
-| ------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [`@wsgate/nest`](./packages/nest/README.md) | NestJS adapter — decorators, explorer, module     | [![npm](https://img.shields.io/npm/v/@wsgate/nest?style=flat-square)](https://www.npmjs.com/package/@wsgate/nest) |
-| [`@wsgate/ui`](./packages/ui/README.md)     | React UI — served automatically by `@wsgate/nest` | [![npm](https://img.shields.io/npm/v/@wsgate/ui?style=flat-square)](https://www.npmjs.com/package/@wsgate/ui)     |
+| Package                                           | Description                                   | npm                                                                                                                     |
+| ------------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [`@wsgate/nest`](./packages/nest/README.md)       | NestJS adapter — decorators, explorer, module | [![npm](https://img.shields.io/npm/v/@wsgate/nest?style=flat-square)](https://www.npmjs.com/package/@wsgate/nest)       |
+| [`@wsgate/express`](./packages/express/README.md) | Express.js middleware                         | [![npm](https://img.shields.io/npm/v/@wsgate/express?style=flat-square)](https://www.npmjs.com/package/@wsgate/express) |
+| [`@wsgate/ui`](./packages/ui/README.md)           | React UI — served automatically by adapters   | [![npm](https://img.shields.io/npm/v/@wsgate/ui?style=flat-square)](https://www.npmjs.com/package/@wsgate/ui)           |
 
 ---
 
@@ -42,8 +43,8 @@ pnpm add @wsgate/nest
 **`app.module.ts`**
 
 ```typescript
-import { DiscoveryModule } from "@nestjs/core";
-import { WsgateExplorer } from "@wsgate/nest";
+import { DiscoveryModule } from '@nestjs/core';
+import { WsgateExplorer } from '@wsgate/nest';
 
 @Module({
   imports: [DiscoveryModule, ChatModule],
@@ -55,9 +56,9 @@ export class AppModule {}
 **`main.ts`**
 
 ```typescript
-import { WsgateModule } from "@wsgate/nest";
+import { WsgateModule } from '@wsgate/nest';
 
-await WsgateModule.setup("/wsgate", app, { title: "My App" });
+await WsgateModule.setup('/wsgate', app, { title: 'My App' });
 await app.listen(3000);
 // → http://localhost:3000/wsgate
 ```

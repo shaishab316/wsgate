@@ -25,6 +25,13 @@ export default defineConfig({
         ],
       },
       {
+        text: 'Adapters',
+        items: [
+          { text: 'NestJS', link: '/guide/introduction' },
+          { text: 'Express', link: '/guide/express' },
+        ],
+      },
+      {
         text: 'API Reference',
         items: [
           { text: 'WsgateModule', link: '/api/wsgate-module' },
