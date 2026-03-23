@@ -1,10 +1,21 @@
 {
   "name": "@wsgate/ui",
-  "version": "0.0.2",
+  "description": "The UI layer for the wsgate ecosystem",
+  "version": "0.0.4",
   "type": "module",
   "files": [
     "dist"
   ],
+  "author": "Shaishab <shaishab316@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://shaishab316.github.io/wsgate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shaishab316/wsgate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shaishab316/wsgate/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

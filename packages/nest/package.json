@@ -1,10 +1,10 @@
 {
   "name": "@wsgate/nest",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Interactive WebSocket documentation UI for NestJS — like Swagger, but for Socket.IO",
   "author": "Shaishab <shaishab316@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/shaishab316/wsgate#readme",
+  "homepage": "https://shaishab316.github.io/wsgate",
   "repository": {
     "type": "git",
     "url": "https://github.com/shaishab316/wsgate.git"
