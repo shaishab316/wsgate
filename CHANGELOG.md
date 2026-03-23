@@ -1,3 +1,12 @@
+# [0.2.0](https://github.com/shaishab316/wsgate/compare/v0.1.2...v0.2.0) (2026-03-23)
+
+
+### Features
+
+* add express example with Wsgate integration and documentation ([227a5c9](https://github.com/shaishab316/wsgate/commit/227a5c93f6be310149a66578d916df52f30b5ad5))
+* **express:** add @wsgate/express package + docs ([d84a22b](https://github.com/shaishab316/wsgate/commit/d84a22bec6036558a7554edd5b818abd85ec04dc))
+* **express:** add README for @wsgate/express package with installation and setup instructions ([41e224c](https://github.com/shaishab316/wsgate/commit/41e224c539eea5b157864734c2898299606997b7))
+
 ## [0.1.2](https://github.com/shaishab316/wsgate/compare/v0.1.1...v0.1.2) (2026-03-23)
 
 
