@@ -1,5 +1,3 @@
-import { relativeTime } from "@/lib/utils";
-import type { Log } from "@/store/wsgate.store";
 import {
   ArrowDown,
   ArrowUp,
@@ -10,6 +8,8 @@ import {
   PinOff,
 } from "lucide-react";
 import { memo, useMemo } from "react";
+import { relativeTime } from "@/lib/utils";
+import type { Log } from "@/store/wsgate.store";
 import { LatencyChip } from "./LatencyChip";
 import { PayloadSection } from "./PayloadSection";
 
@@ -113,6 +113,7 @@ export const LogEntry = memo(function LogEntry({
         .join(" ")}
     >
       {/* Row */}
+      {/** biome-ignore lint/a11y/useSemanticElements: It's a custom interactive element */}
       <div
         role="button"
         tabIndex={0}
@@ -139,12 +140,13 @@ export const LogEntry = memo(function LogEntry({
 
         {/* Event name — click to filter */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onFilterByEvent(log.event);
           }}
           title={`Filter: "${log.event}"`}
-          className={`flex-1 min-w-0 text-xs font-mono font-medium truncate text-left hover:underline underline-offset-2 ${
+          className={`w-fit text-xs font-mono font-medium truncate text-left hover:underline underline-offset-2 ${
             isOut
               ? "text-blue-300 hover:text-blue-200"
               : "text-emerald-300 hover:text-emerald-200"
@@ -158,6 +160,7 @@ export const LogEntry = memo(function LogEntry({
         {/* ACK badge */}
         {hasAck && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onToggleAck();
@@ -188,6 +191,7 @@ export const LogEntry = memo(function LogEntry({
 
         {/* Pin — visible on hover or when pinned */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onTogglePin();
@@ -232,12 +236,12 @@ export const LogEntry = memo(function LogEntry({
       {/* ACK */}
       {isAckExpanded && hasAck && (
         <PayloadSection
-          data={log.ack!.data}
+          data={log.ack?.data}
           label="Acknowledgment"
           labelColor="text-purple-400"
           extra={
             <span className="text-[9px] text-zinc-700 font-mono">
-              {log.ack!.timestamp}
+              {log.ack?.timestamp}
             </span>
           }
         />

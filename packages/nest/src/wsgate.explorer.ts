@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
+// biome-ignore lint/style/useImportType: NestJS emitDecoratorMetadata requires value imports for DI
 import { DiscoveryService, MetadataScanner, Reflector } from "@nestjs/core";
 import {
   WSGATE_EVENT_METADATA,
-  WsDocOptions,
+  type WsDocOptions,
 } from "./decorators/ws-doc.decorator";
 
 // NestJS stores @WebSocketGateway() options under this reflect metadata key.
@@ -47,11 +48,11 @@ function normaliseNamespace(raw: string | undefined): string {
  * Reads the namespace from a `@WebSocketGateway()` class decorator, if present.
  * Degrades gracefully to `'/'` if the key is absent or the metadata is unavailable.
  */
-function resolveGatewayNamespace(constructor: Function): string {
+function resolveGatewayNamespace(ctor: NewableFunction): string {
   try {
     const opts: { namespace?: string } | undefined = Reflect.getMetadata(
       NESTJS_GATEWAY_OPTIONS_KEY,
-      constructor,
+      ctor,
     );
     return normaliseNamespace(opts?.namespace);
   } catch {

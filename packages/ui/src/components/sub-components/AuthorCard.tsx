@@ -10,20 +10,20 @@
  *             reveals section-by-section with staggered fade-up
  */
 
-import { useState, useEffect, useRef, Fragment } from "react";
 import {
-  Github,
-  BookOpen,
-  Package,
-  MapPin,
-  Building2,
-  Link2,
-  Users,
-  GitFork,
   BookMarked,
-  CalendarDays,
+  BookOpen,
   Briefcase,
+  Building2,
+  CalendarDays,
+  GitFork,
+  Github,
+  Link2,
+  MapPin,
+  Package,
+  Users,
 } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 // ── Types ─────────────────────────────────────────────
 
@@ -301,6 +301,7 @@ export default function AuthorCard() {
   const cleanCompany = user.company?.replace(/^@/, "") ?? "";
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: Hover state is managed on the container div for simplicity, and inner elements have pointer-events adjusted accordingly.
     <div
       className="relative flex justify-center"
       onMouseEnter={onEnter}

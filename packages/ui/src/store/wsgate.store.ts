@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import type { WsEvent } from "@/types/ws-event";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { LogEntry } from "@/types/log";
+import type { WsEvent } from "@/types/ws-event";
 
 interface WsgateState {
   // ── Persisted ─────────────────────────────────────────

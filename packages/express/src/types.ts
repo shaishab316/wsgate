@@ -41,7 +41,7 @@ export interface WsEventDoc {
    * - `subscribe` — server sends this event to the client
    * @default 'emit'
    */
-  type?: 'emit' | 'subscribe';
+  type?: "emit" | "subscribe";
 
   /**
    * The Socket.IO namespace this event belongs to (e.g. `'/chat'`).

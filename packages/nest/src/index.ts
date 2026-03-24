@@ -13,18 +13,15 @@
  * @packageDocumentation
  */
 
-// ── Core Module ───────────────────────────────────────
-// Main entry point for setting up the wsgate UI in a NestJS application.
-export { WsgateModule } from "./wsgate.module";
-export type { WsgateOptions } from "./wsgate.module";
-
+export type { WsDocOptions } from "./decorators/ws-doc.decorator";
+// ── Decorator ─────────────────────────────────────────
+// Applied to gateway methods to mark them as documented socket events.
+export { WSGATE_EVENT_METADATA, WsDoc } from "./decorators/ws-doc.decorator";
+export type { WsEventMeta } from "./wsgate.explorer";
 // ── Explorer ──────────────────────────────────────────
 // Scans NestJS providers and collects @WsDoc() metadata at bootstrap.
 export { WsgateExplorer } from "./wsgate.explorer";
-export type { WsEventMeta } from "./wsgate.explorer";
-
-// ── Decorator ─────────────────────────────────────────
-// Applied to gateway methods to mark them as documented socket events.
-export { WsDoc } from "./decorators/ws-doc.decorator";
-export type { WsDocOptions } from "./decorators/ws-doc.decorator";
-export { WSGATE_EVENT_METADATA } from "./decorators/ws-doc.decorator";
+export type { WsgateOptions } from "./wsgate.module";
+// ── Core Module ───────────────────────────────────────
+// Main entry point for setting up the wsgate UI in a NestJS application.
+export { WsgateModule } from "./wsgate.module";

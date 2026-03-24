@@ -1,7 +1,7 @@
-import { downloadJson } from "@/lib/utils";
-import type { Log } from "@/store/wsgate.store";
 import { ArrowUp, Copy, FileJson } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { downloadJson } from "@/lib/utils";
+import type { Log } from "@/store/wsgate.store";
 
 /**
  * ExportMenu component for exporting logs in various formats.
@@ -107,6 +107,7 @@ export function ExportMenu({
       <div className="flex flex-col py-1">
         {items.map((item) => (
           <button
+            type="button"
             key={item.label}
             onClick={item.fn}
             className="flex items-center gap-2.5 px-3 py-2 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors text-left"

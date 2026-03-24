@@ -1,2 +1,2 @@
-export { wsgate } from './middleware';
-export { WsgateOptions, WsEventDoc } from './types';
+export { wsgate } from "./middleware";
+export { WsEventDoc, WsgateOptions } from "./types";

@@ -7,18 +7,18 @@
  * @packageDocumentation
  */
 
-import { useState, useEffect, useRef } from "react";
+import Editor from "@monaco-editor/react";
 import {
+  Braces,
+  Check,
   Code2,
   Copy,
-  Check,
-  Terminal,
   Star,
   StarOff,
+  Terminal,
   X,
-  Braces,
 } from "lucide-react";
-import Editor from "@monaco-editor/react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { SelectedEvent } from "@/store/wsgate.store";
 
@@ -538,6 +538,8 @@ export default function CodeGenPanel({
 
   return (
     // ── Backdrop ──
+    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop — keyboard dismiss handled via Escape on the dialog
+    // biome-ignore lint/a11y/useKeyWithClickEvents: modal backdrop — keyboard dismiss handled via Escape on the dialog
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
       onClick={handleBackdrop}
@@ -574,6 +576,7 @@ export default function CodeGenPanel({
 
           {/* Close */}
           <button
+            type="button"
             onClick={onClose}
             className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-600 hover:text-zinc-200 hover:bg-zinc-800 transition-all shrink-0"
           >
@@ -591,6 +594,7 @@ export default function CodeGenPanel({
             <div className="flex gap-1">
               {LANG_ORDER.filter((id) => starred.has(id)).map((id) => (
                 <button
+                  type="button"
                   key={id}
                   onClick={() => setLang(id)}
                   className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-all ${
@@ -616,6 +620,7 @@ export default function CodeGenPanel({
             return (
               <div key={id} className="relative shrink-0 group/tab">
                 <button
+                  type="button"
                   onClick={() => setLang(id)}
                   className={`flex items-center gap-1.5 pl-2.5 pr-7 py-1.5 rounded-lg text-[10px] font-semibold border transition-all duration-150 ${
                     isActive
@@ -629,6 +634,7 @@ export default function CodeGenPanel({
 
                 {/* Star toggle */}
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleStar(id);
@@ -671,6 +677,7 @@ export default function CodeGenPanel({
           <div className="flex items-center gap-1">
             {/* Format — triggers Monaco's built-in formatDocument action */}
             <button
+              type="button"
               onClick={() =>
                 editorRef.current
                   ?.getAction("editor.action.formatDocument")
@@ -685,6 +692,7 @@ export default function CodeGenPanel({
 
             {/* Copy code */}
             <button
+              type="button"
               onClick={handleCopy}
               className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border transition-all ${
                 copied
@@ -741,6 +749,7 @@ export default function CodeGenPanel({
           </div>
           <button
             onClick={() => navigator.clipboard.writeText(INSTALL_HINT[lang])}
+            type="button"
             className="shrink-0 flex items-center gap-1 text-[9px] text-zinc-600 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-800 ml-2"
           >
             <Copy className="w-2.5 h-2.5" />

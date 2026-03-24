@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useMemo, useState } from "react";
 import { CopyButton } from "./CopyButton";
 
 /**
@@ -47,6 +47,7 @@ export function AckPanel({
   if (formatted === null) return null;
   return (
     <div className="flex flex-col gap-0 rounded-xl border border-emerald-500/20 bg-emerald-500/3 overflow-hidden shrink-0">
+      {/* biome-ignore lint/a11y/useSemanticElements: contains nested buttons — converting to <button> causes invalid HTML nesting */}
       <div
         onClick={() => setExpanded((v) => !v)}
         role="button"

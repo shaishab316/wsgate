@@ -1,7 +1,7 @@
-import { getNamespaceDisplayName } from "@/lib/utils";
-import type { NAMESPACE_PALETTE } from "./Config";
-import { Badge } from "../ui/badge";
 import { ChevronRight } from "lucide-react";
+import { getNamespaceDisplayName } from "@/lib/utils";
+import { Badge } from "../ui/badge";
+import type { NAMESPACE_PALETTE } from "./Config";
 
 /**
  * Renders a collapsible namespace section header with metadata.
@@ -41,6 +41,7 @@ export function NamespaceSectionHeader({
 
   return (
     <button
+      type="button"
       onClick={onToggle}
       className="w-full flex items-center gap-2 px-3 py-2.5 mt-3 first:mt-2 mb-1 group transition-colors hover:bg-zinc-800/30"
     >

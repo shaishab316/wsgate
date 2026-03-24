@@ -64,6 +64,7 @@ export function MultiEmitPanel({
   return (
     <div className="shrink-0">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md border ${open ? "text-violet-400 border-violet-500/30 bg-violet-500/5" : "text-zinc-600 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"}`}
       >
@@ -74,8 +75,14 @@ export function MultiEmitPanel({
         <div className="mt-2 rounded-xl border border-violet-500/20 bg-violet-500/3 overflow-hidden">
           <div className="flex items-center gap-3 px-3 py-2.5">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] text-zinc-600">Count</label>
+              <label
+                className="text-[10px] text-zinc-600"
+                htmlFor="multi-count"
+              >
+                Count
+              </label>
               <input
+                id="multi-count"
                 type="number"
                 min={1}
                 max={100}
@@ -85,8 +92,14 @@ export function MultiEmitPanel({
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] text-zinc-600">Delay (ms)</label>
+              <label
+                className="text-[10px] text-zinc-600"
+                htmlFor="multi-delay"
+              >
+                Delay (ms)
+              </label>
               <input
+                id="multi-delay"
                 type="number"
                 min={0}
                 max={5000}
@@ -99,6 +112,7 @@ export function MultiEmitPanel({
             <div className="flex-1" />
             {running ? (
               <button
+                type="button"
                 onClick={() => {
                   cancelRef.current = true;
                   setRunning(false);
@@ -110,6 +124,7 @@ export function MultiEmitPanel({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={run}
                 disabled={disabled}
                 className="flex items-center gap-1.5 text-[10px] text-violet-400 border border-violet-500/30 hover:bg-violet-500/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 transition-colors"
@@ -140,6 +155,7 @@ export function MultiEmitPanel({
                   )}
                 </span>
                 <button
+                  type="button"
                   onClick={() => setResults([])}
                   className="text-[9px] text-zinc-700 hover:text-zinc-400"
                 >

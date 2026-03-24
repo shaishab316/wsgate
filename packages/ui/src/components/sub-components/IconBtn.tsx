@@ -37,6 +37,7 @@ export function IconBtn({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       title={title}
       className={`p-1.5 rounded-md border transition-all ${

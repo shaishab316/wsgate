@@ -1,4 +1,3 @@
-import type { SocketStatus } from "@/hooks/useSocket";
 import {
   AlertTriangle,
   ArrowDown,
@@ -15,6 +14,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import type { SocketStatus } from "@/hooks/useSocket";
 
 /**
  * Maximum number of items to keep in the event history.

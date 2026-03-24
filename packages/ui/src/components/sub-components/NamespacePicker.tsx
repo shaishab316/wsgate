@@ -72,6 +72,7 @@ export function NamespacePicker({
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
         className={`flex items-center gap-2 h-9 px-3 rounded-lg border transition-all duration-200 ${
@@ -94,6 +95,7 @@ export function NamespacePicker({
             const isActive = selectedNamespace === ns;
             return (
               <button
+                type="button"
                 key={ns}
                 onClick={() => {
                   onSelect(ns);

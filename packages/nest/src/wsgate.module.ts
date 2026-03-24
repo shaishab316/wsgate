@@ -1,7 +1,8 @@
-import { INestApplication, Module } from '@nestjs/common';
-import { WsgateExplorer } from './wsgate.explorer';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { type INestApplication, Module } from "@nestjs/common";
+import type { Request, Response } from "express";
+import { WsgateExplorer } from "./wsgate.explorer";
 
 /**
  * Configuration options for the WsgateModule.
@@ -61,6 +62,7 @@ export interface WsgateOptions {
  * ```
  */
 @Module({})
+// biome-ignore lint/complexity/noStaticOnlyClass: NestJS module pattern
 export class WsgateModule {
   /**
    * Mounts the wsgate interactive UI onto the NestJS application.
@@ -84,7 +86,7 @@ export class WsgateModule {
   ): Promise<void> {
     if (options?.disabled) return;
 
-    const title = options?.title ?? 'WsGate';
+    const title = options?.title ?? "WsGate";
 
     // Resolve WsgateExplorer from the DI container.
     const explorer = await app.resolve(WsgateExplorer).catch(() => {
@@ -97,22 +99,22 @@ export class WsgateModule {
     const events = explorer.explore();
 
     // ── Expose raw event metadata as JSON ─────────────────
-    app.use(`${routePath}/events.json`, (_req: any, res: any) => {
+    app.use(`${routePath}/events.json`, (_req: Request, res: Response) => {
       res.json({ title, events });
     });
 
     // ── Resolve and serve the UI HTML ─────────────────────
     // Resolves from @wsgate/ui package — works in monorepo and after npm install.
     const uiHtmlPath = path.join(
-      path.dirname(require.resolve('@wsgate/ui/package.json')),
-      'dist',
-      'index.html',
+      path.dirname(require.resolve("@wsgate/ui/package.json")),
+      "dist",
+      "index.html",
     );
 
-    const uiHtml = fs.readFileSync(uiHtmlPath, 'utf-8');
+    const uiHtml = fs.readFileSync(uiHtmlPath, "utf-8");
 
-    app.use(routePath, (_req: any, res: any) => {
-      res.setHeader('Content-Type', 'text/html');
+    app.use(routePath, (_req: Request, res: Response) => {
+      res.setHeader("Content-Type", "text/html");
       res.end(uiHtml);
     });
   }

@@ -1,8 +1,8 @@
-import type { WsEvent } from "@/types/ws-event";
-import { TYPE_CONFIG } from "./Config";
-import { useState } from "react";
 import { Check, Copy, Radio, Send } from "lucide-react";
+import { useState } from "react";
+import type { WsEvent } from "@/types/ws-event";
 import { Badge } from "../ui/badge";
+import { TYPE_CONFIG } from "./Config";
 
 /**
  * Displays a single event row in a list of WebSocket events.
@@ -49,6 +49,7 @@ export function EventRow({
   };
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: The div is used for custom styling and interaction, but we ensure accessibility with role, tabIndex, and keyboard event handling.
     <div
       onClick={onSelect}
       role="button"
@@ -98,6 +99,7 @@ export function EventRow({
 
         {/* Copy button */}
         <button
+          type="button"
           onClick={handleCopy}
           title="Copy event name"
           className={`shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 ${

@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import {
   NAMESPACE_PALETTE,
@@ -255,8 +255,8 @@ export function getNamespaceDisplayName(ns: string): string {
  * @param events - The full discovered event list.
  * @returns Sorted array of unique namespace strings.
  */
-export function getUniqueNamespaces(events: WsEvent[]): string[] {
-  const set = new Set(events.map((e) => e.namespace ?? "/"));
+export function getUniqueNamespaces(events: WsEvent[] | null): string[] {
+  const set = new Set(events?.map((e) => e.namespace ?? "/") ?? []);
   const sorted = [...set].filter((n) => n !== "/").sort();
   return set.has("/") ? ["/", ...sorted] : sorted;
 }
@@ -269,17 +269,24 @@ export function getUniqueNamespaces(events: WsEvent[]): string[] {
  * @returns Record mapping namespace → (gateway name → events).
  */
 export function groupByNamespaceThenGateway(
-  events: WsEvent[],
+  events: WsEvent[] | null,
 ): Record<string, Record<string, WsEvent[]>> {
-  return events.reduce<Record<string, Record<string, WsEvent[]>>>(
-    (parts, event) => {
-      const ns = event.namespace ?? "/";
-      const gw = event.gatewayName ?? "Default";
-      (parts[ns] ??= {})[gw] ??= [];
-      parts[ns][gw].push(event);
-      return parts;
-    },
-    {},
+  return (
+    events?.reduce<Record<string, Record<string, WsEvent[]>>>(
+      (parts, event) => {
+        const ns = event.namespace ?? "/";
+        const gw = event.gatewayName ?? "Default";
+        if (!parts[ns]) {
+          parts[ns] = {};
+        }
+        if (!parts[ns][gw]) {
+          parts[ns][gw] = [];
+        }
+        parts[ns][gw].push(event);
+        return parts;
+      },
+      {},
+    ) ?? {}
   );
 }
 

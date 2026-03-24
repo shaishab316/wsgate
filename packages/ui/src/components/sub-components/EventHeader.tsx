@@ -1,5 +1,5 @@
-import type { SelectedEvent } from "@/store/wsgate.store";
 import { ChevronRight, Radio, Send, Zap } from "lucide-react";
+import type { SelectedEvent } from "@/store/wsgate.store";
 import { Badge } from "../ui/badge";
 
 /**

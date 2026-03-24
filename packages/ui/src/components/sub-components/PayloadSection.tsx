@@ -1,6 +1,6 @@
 import { safeStringify } from "@/lib/utils";
-import { JsonViewer } from "./JsonViewer";
 import { CopyButton } from "./CopyButton";
+import { JsonViewer } from "./JsonViewer";
 
 /**
  * Displays a collapsible payload section with formatted JSON data and copy functionality.

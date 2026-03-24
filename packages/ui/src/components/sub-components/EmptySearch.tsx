@@ -29,6 +29,7 @@ export function EmptySearch({ onClear }: { onClear: () => void }) {
         <p className="text-xs text-zinc-500 leading-relaxed">
           Try searching for different keywords or{" "}
           <button
+            type="button"
             onClick={onClear}
             className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
           >

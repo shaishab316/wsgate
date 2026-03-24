@@ -1,6 +1,6 @@
-import { relativeTime } from "@/lib/utils";
 import { Clock, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { relativeTime } from "@/lib/utils";
 
 export interface HistoryEntry {
   id: string;
@@ -61,6 +61,7 @@ export function HistoryDropdown({
         </span>
         {history.length > 0 && (
           <button
+            type="button"
             onClick={onClear}
             className="flex items-center gap-1 text-[9px] text-zinc-600 hover:text-red-400 transition-colors"
           >
@@ -80,6 +81,7 @@ export function HistoryDropdown({
         <div className="max-h-60 overflow-y-auto">
           {history.map((entry) => (
             <button
+              type="button"
               key={entry.id}
               onClick={() => {
                 onRestore(entry.payload);

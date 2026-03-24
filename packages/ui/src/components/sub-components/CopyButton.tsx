@@ -25,6 +25,7 @@ export function CopyButton({ text }: { text: string }) {
   }
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
     >

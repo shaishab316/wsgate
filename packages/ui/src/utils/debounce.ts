@@ -10,6 +10,8 @@
  * @example
  * const debouncedSetUrl = debounce((url: string) => setUrl(url), 500)
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: This function is designed to be generic and work with any function signature, so we use `any` for the parameters and return type.
 export function debounce<T extends (...args: any[]) => void>(
   fn: T,
   delay: number,

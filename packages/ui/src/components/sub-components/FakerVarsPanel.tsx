@@ -1,6 +1,6 @@
-import { FAKER_VARS, type FakerVarDef } from "@/lib/faker";
 import { FlaskConical, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FAKER_VARS, type FakerVarDef } from "@/lib/faker";
 
 /**
  * A panel component for inserting faker variables into an editor.
@@ -96,7 +96,6 @@ export function FakerVarsPanel({
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search variables…"
           className="w-full text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors"
-          autoFocus
         />
       </div>
 
@@ -113,6 +112,7 @@ export function FakerVarsPanel({
             </div>
             {vars.map(([name, def]) => (
               <button
+                type="button"
                 key={name}
                 onClick={() => {
                   onInsert(`{{${name}}}`);

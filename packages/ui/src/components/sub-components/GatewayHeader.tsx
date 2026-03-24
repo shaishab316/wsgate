@@ -25,6 +25,7 @@ export function GatewayHeader({
 }) {
   return (
     <button
+      type="button"
       onClick={onToggle}
       className="w-full flex items-center gap-2 px-3 py-1.5 mt-2 ml-0 group"
     >

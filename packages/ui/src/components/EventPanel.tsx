@@ -7,60 +7,60 @@
  * @packageDocumentation
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import Editor, { type OnMount, useMonaco } from "@monaco-editor/react";
 import {
-  Send,
-  Radio,
-  Check,
-  RotateCcw,
-  Braces,
   ArrowDownLeft,
-  WifiOff,
-  X,
+  Bookmark,
+  BookmarkPlus,
+  Braces,
+  Check,
   Code2,
   History,
-  BookmarkPlus,
-  Bookmark,
+  Radio,
+  RotateCcw,
+  Send,
   Sparkles,
+  WifiOff,
+  X,
 } from "lucide-react";
-import Editor, { useMonaco, type OnMount } from "@monaco-editor/react";
 import type * as MonacoType from "monaco-editor";
-import { useWsgateStore } from "@/store/wsgate.store";
-import { useSocketStore } from "@/hooks/useSocket";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeGenPanel from "@/components/sub-components/CodeGenPanel";
 import ShortcutHint from "@/components/sub-components/ShortcutHint";
-import EmptyState from "./sub-components/EmptyState";
+import { useSocketStore } from "@/hooks/useSocket";
 import { buildFakerCompletions, resolveFakerVars } from "@/lib/faker";
 import {
   buildPayloadSkeleton,
   loadFromStorage,
+  resolveJsonType,
   saveToStorage,
+  shortId,
   storageKey,
   tryParseJson,
-  resolveJsonType,
-  shortId,
 } from "@/lib/utils";
+import { useWsgateStore } from "@/store/wsgate.store";
+import { FakerBadge } from "./badge/FakerBadge";
+import { JsonValidityBadge } from "./badge/JsonValidityBadge";
+import { ModifiedBadge } from "./badge/ModifiedBadge";
+import { EditorShimmer } from "./shimmer/EditorShimmer";
+import { PanelShimmer } from "./shimmer/PanelShimmer";
+import { AckPanel } from "./sub-components/AckPanel";
 import { BASE_EDITOR_OPTIONS, HISTORY_LIMIT } from "./sub-components/Config";
+import { CopyButton } from "./sub-components/CopyButton";
+import { EmitError } from "./sub-components/EmitError";
+import EmptyState from "./sub-components/EmptyState";
+import { EventHeader } from "./sub-components/EventHeader";
+import { FakerVarsPanel } from "./sub-components/FakerVarsPanel";
 import {
   HistoryDropdown,
   type HistoryEntry,
 } from "./sub-components/HistoryDropdown";
-import { PresetsDropdown, type Preset } from "./sub-components/PresetsDropdown";
 import {
   MultiEmitPanel,
   type MultiEmitResult,
 } from "./sub-components/MultiEmitPanel";
-import { PanelShimmer } from "./shimmer/PanelShimmer";
-import { EventHeader } from "./sub-components/EventHeader";
+import { type Preset, PresetsDropdown } from "./sub-components/PresetsDropdown";
 import { SchemaPills } from "./sub-components/SchemaPills";
-import { CopyButton } from "./sub-components/CopyButton";
-import { JsonValidityBadge } from "./badge/JsonValidityBadge";
-import { ModifiedBadge } from "./badge/ModifiedBadge";
-import { FakerBadge } from "./badge/FakerBadge";
-import { FakerVarsPanel } from "./sub-components/FakerVarsPanel";
-import { AckPanel } from "./sub-components/AckPanel";
-import { EditorShimmer } from "./shimmer/EditorShimmer";
-import { EmitError } from "./sub-components/EmitError";
 
 /**
  * EventPanel component for emitting and managing WebSocket events.
@@ -168,6 +168,7 @@ export default function EventPanel() {
   };
 
   // ── Reset on event change ─────────────────────────────
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We only want to reset editorReady when selectedEvent changes, not skeletonJson
   useEffect(() => {
     setEditorReady(false);
     const t = setTimeout(() => setEditorReady(true), 300);
@@ -175,6 +176,7 @@ export default function EventPanel() {
   }, [selectedEvent]);
 
   // ── Auto-disconnect ───────────────────────────────────
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We only want to run this effect when selectedEvent or selectedNamespace changes, not status or disconnect function reference
   useEffect(() => {
     if (!selectedEvent) return;
     if ((selectedEvent.namespace ?? "/") !== selectedNamespace && connected)
@@ -203,6 +205,7 @@ export default function EventPanel() {
       ]),
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: Monaco's typings don't expose jsonDefaults
     const json = (monaco.languages as any).json;
     if (!json?.jsonDefaults) return;
     json.jsonDefaults.setDiagnosticsOptions({
@@ -432,6 +435,7 @@ export default function EventPanel() {
   );
 
   // ── Keyboard shortcut ─────────────────────────────────
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We want this effect to re-run when selectedEvent or connected changes, but not when payload or error changes, to avoid re-attaching the event listener on every keystroke or error state change.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -452,6 +456,7 @@ export default function EventPanel() {
     return (
       <div className="flex flex-col h-full overflow-hidden p-5 gap-4 relative">
         <button
+          type="button"
           onClick={() => setSelectedEvent(null)}
           className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors z-10"
         >
@@ -512,6 +517,7 @@ export default function EventPanel() {
     <>
       <div className="flex flex-col h-full overflow-hidden p-5 gap-4 relative">
         <button
+          type="button"
           onClick={() => setSelectedEvent(null)}
           className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors z-10"
         >
@@ -559,6 +565,7 @@ export default function EventPanel() {
                 onClick={handleFormat}
                 className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
                 title="Format JSON (Alt+Shift+F)"
+                type="button"
               >
                 <Braces className="w-3 h-3" />
                 Format
@@ -568,6 +575,7 @@ export default function EventPanel() {
                 onClick={handleReset}
                 className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
                 title="Reset to skeleton"
+                type="button"
               >
                 <RotateCcw className="w-3 h-3" />
                 Reset
@@ -585,6 +593,7 @@ export default function EventPanel() {
                   }}
                   title="Insert faker variable (Ctrl+Space)"
                   className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${fakerOpen ? "text-violet-300 bg-zinc-800 border border-violet-500/30" : "text-zinc-600 hover:text-violet-300 hover:bg-zinc-800 border border-transparent"}`}
+                  type="button"
                 >
                   <Sparkles className="w-3 h-3" />
                   Faker
@@ -606,6 +615,7 @@ export default function EventPanel() {
                     setFakerOpen(false);
                   }}
                   className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${historyOpen ? "text-zinc-200 bg-zinc-800" : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"}`}
+                  type="button"
                 >
                   <History className="w-3 h-3" />
                   History
@@ -634,6 +644,7 @@ export default function EventPanel() {
                     setFakerOpen(false);
                   }}
                   className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${presetsOpen ? "text-zinc-200 bg-zinc-800" : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"}`}
+                  type="button"
                 >
                   {presets.length > 0 ? (
                     <Bookmark className="w-3 h-3" />
@@ -666,6 +677,7 @@ export default function EventPanel() {
                 onClick={() => setCodeGenOpen(true)}
                 className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-all duration-150 px-2.5 py-1.5 rounded-lg border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800"
                 title="Generate client code"
+                type="button"
               >
                 <Code2 className="w-3 h-3" />
                 Code
@@ -681,6 +693,7 @@ export default function EventPanel() {
                   </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={handleEmit}
                     disabled={!connected || emitting}
                     title={

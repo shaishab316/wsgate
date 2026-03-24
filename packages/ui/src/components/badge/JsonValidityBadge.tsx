@@ -1,7 +1,7 @@
-import { resolveFakerVars } from "@/lib/faker";
-import { tryParseJson } from "@/lib/utils";
 import { CircleDot } from "lucide-react";
 import { useMemo } from "react";
+import { resolveFakerVars } from "@/lib/faker";
+import { tryParseJson } from "@/lib/utils";
 
 /**
  * JsonValidityBadge — Validates JSON payloads and indicates validity status.

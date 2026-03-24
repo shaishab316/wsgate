@@ -1,5 +1,5 @@
-import { hasFakerVars } from "@/lib/faker";
 import { Sparkles } from "lucide-react";
+import { hasFakerVars } from "@/lib/faker";
 
 /**
  * Faker Badge — Detects and indicates presence of faker variables in payloads.

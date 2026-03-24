@@ -8,10 +8,10 @@
  */
 
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import EventLog from "./components/EventLog";
+import EventPanel from "./components/EventPanel";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
-import EventPanel from "./components/EventPanel";
-import EventLog from "./components/EventLog";
 
 /**
  * Drag handle rendered between panels.

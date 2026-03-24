@@ -15,8 +15,8 @@
 
 import { MousePointerClick } from "lucide-react";
 import appIcon from "@/assets/icon.png";
-import AuthorCard from "./AuthorCard";
 import { useTypewriter } from "@/hooks/useTypewriter";
+import AuthorCard from "./AuthorCard";
 
 // ── Feature data ──────────────────────────────────────
 
@@ -99,6 +99,7 @@ function FeatureTile({
   delay,
 }: (typeof FEATURES)[number] & { delay: number }) {
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: purely visual hover effect
     <div
       className="wsg-fadeUp flex flex-col gap-1 px-2.5 py-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800/60 cursor-default"
       style={{

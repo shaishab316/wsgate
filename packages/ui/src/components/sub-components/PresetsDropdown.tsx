@@ -84,6 +84,7 @@ export function PresetsDropdown({
           className="flex-1 text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors"
         />
         <button
+          type="button"
           onClick={handleSave}
           disabled={!newName.trim()}
           className="shrink-0 text-[10px] text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700 hover:border-zinc-500 rounded-lg px-2.5 py-1.5 transition-all bg-zinc-900 hover:bg-zinc-800"
@@ -107,6 +108,7 @@ export function PresetsDropdown({
                 {p.name}
               </span>
               <button
+                type="button"
                 onClick={() => {
                   onLoad(p.payload);
                   onClose();
@@ -116,6 +118,7 @@ export function PresetsDropdown({
                 Load
               </button>
               <button
+                type="button"
                 onClick={() => onDelete(p.id)}
                 title="Delete preset"
                 aria-label="Delete preset"

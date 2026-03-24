@@ -1,5 +1,5 @@
-import { formatLatency } from "@/lib/utils";
 import { Timer } from "lucide-react";
+import { formatLatency } from "@/lib/utils";
 
 /**
  * Determines the color styling based on latency in milliseconds.

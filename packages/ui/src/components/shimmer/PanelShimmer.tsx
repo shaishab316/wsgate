@@ -29,9 +29,9 @@ export function PanelShimmer() {
         <div className="h-3 w-52 rounded bg-zinc-800/70 animate-pulse" />
       </div>
       <div className="flex gap-2 shrink-0">
-        {[70, 90, 60].map((w, i) => (
+        {[70, 90, 60].map((w) => (
           <div
-            key={i}
+            key={w}
             className="h-6 rounded-lg bg-zinc-800 animate-pulse"
             style={{ width: w }}
           />
@@ -41,6 +41,7 @@ export function PanelShimmer() {
         <div className="absolute inset-0 rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2.5">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: this is a static list of placeholders, not dynamic data
               key={i}
               className="h-3 rounded-full bg-zinc-800 animate-pulse"
               style={{ width: `${30 + (i % 4) * 15}%` }}

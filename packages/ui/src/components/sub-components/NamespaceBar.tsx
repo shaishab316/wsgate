@@ -1,6 +1,6 @@
+import { Network } from "lucide-react";
 import { namespaceColor } from "@/lib/utils";
 import type { WsEvent } from "@/types/ws-event";
-import { Network } from "lucide-react";
 
 /**
  * NamespaceBar - A filterable namespace selector component
@@ -54,6 +54,7 @@ export function NamespaceBar({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* "All" pill */}
         <button
+          type="button"
           onClick={() => onSelect(null)}
           className={`inline-flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full text-[10px] font-medium border transition-all duration-150 ${
             active === null
@@ -84,6 +85,7 @@ export function NamespaceBar({
 
           return (
             <button
+              type="button"
               key={ns}
               onClick={() => onSelect(isActive ? null : ns)}
               className={`inline-flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full text-[10px] font-mono font-medium border transition-all duration-150 ${

@@ -32,6 +32,7 @@ export function EmitError({
       </div>
       <p className="text-xs text-red-300 flex-1 font-mono">{message}</p>
       <button
+        type="button"
         onClick={onDismiss}
         className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
       >

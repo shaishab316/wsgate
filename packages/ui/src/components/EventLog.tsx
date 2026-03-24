@@ -8,35 +8,35 @@
  * @packageDocumentation
  */
 
-import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import {
-  ArrowUp,
   ArrowDown,
+  ArrowUp,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Download,
+  Lock,
+  Pause,
+  Pin,
+  Play,
+  ScrollText,
   Search,
   Trash2,
-  ScrollText,
-  X,
-  Pin,
-  Download,
-  Pause,
-  Play,
-  ChevronsUpDown,
-  ChevronsDownUp,
-  Lock,
   Unlock,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useWsgateStore, type Log } from '@/store/wsgate.store';
-import { IconBtn } from './sub-components/IconBtn';
-import { ExportMenu } from './sub-components/ExportMenu';
-import { DIRECTION_CONFIG } from './sub-components/Config';
-import { LogEmptyState } from './sub-components/LogEmptyState';
-import { PinnedSeparator } from './sub-components/PinnedSeparator';
-import { LogEntry } from './sub-components/LogEntry';
-import { StreamSeparator } from './sub-components/StreamSeparator';
-import { BufferBar } from './sub-components/BufferBar';
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { type Log, useWsgateStore } from "@/store/wsgate.store";
+import { BufferBar } from "./sub-components/BufferBar";
+import { DIRECTION_CONFIG } from "./sub-components/Config";
+import { ExportMenu } from "./sub-components/ExportMenu";
+import { IconBtn } from "./sub-components/IconBtn";
+import { LogEmptyState } from "./sub-components/LogEmptyState";
+import { LogEntry } from "./sub-components/LogEntry";
+import { PinnedSeparator } from "./sub-components/PinnedSeparator";
+import { StreamSeparator } from "./sub-components/StreamSeparator";
 
-type DirectionFilter = 'all' | 'in' | 'out';
+type DirectionFilter = "all" | "in" | "out";
 
 /**
  * EventLog component for displaying and managing WebSocket gateway events.
@@ -105,14 +105,14 @@ export default function EventLog() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [expandedAck, setExpandedAck] = useState<Set<number>>(new Set());
   const [pinnedIds, setPinnedIds] = useState<Set<number>>(new Set());
-  const [filterInput, setFilterInput] = useState('');
-  const [direction, setDirection] = useState<DirectionFilter>('all');
+  const [filterInput, setFilterInput] = useState("");
+  const [direction, setDirection] = useState<DirectionFilter>("all");
   const [searchFocus, setSearchFocus] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [exportOpen, setExportOpen] = useState(false);
 
   // Debounced live search
-  const [debouncedFilter, setDebouncedFilter] = useState('');
+  const [debouncedFilter, setDebouncedFilter] = useState("");
   useEffect(() => {
     const t = setTimeout(() => setDebouncedFilter(filterInput), 150);
     return () => clearTimeout(t);
@@ -121,11 +121,11 @@ export default function EventLog() {
   // ── Filtering ─────────────────────────────────────────
   const { filteredLogs, regexError } = useMemo(() => {
     let result = displayLogs;
-    if (direction !== 'all')
+    if (direction !== "all")
       result = result.filter((l) => l.direction === direction);
     if (!debouncedFilter) return { filteredLogs: result, regexError: false };
     try {
-      const re = new RegExp(debouncedFilter, 'i');
+      const re = new RegExp(debouncedFilter, "i");
       return {
         filteredLogs: result.filter((l) => re.test(l.event)),
         regexError: false,
@@ -139,9 +139,10 @@ export default function EventLog() {
   const streamLogs = filteredLogs.filter((l) => !pinnedIds.has(l.id));
 
   // ── Auto-scroll ───────────────────────────────────────
+  // biome-ignore lint/correctness/useExhaustiveDependencies: explicitly only want to trigger on displayLogs, autoScroll, or paused changes
   useEffect(() => {
     if (autoScroll && !paused) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [displayLogs, autoScroll, paused]);
 
@@ -183,9 +184,9 @@ export default function EventLog() {
     [],
   );
 
-  const hasFilter = !!(debouncedFilter || direction !== 'all');
-  const outCount = displayLogs.filter((l) => l.direction === 'out').length;
-  const inCount = displayLogs.filter((l) => l.direction === 'in').length;
+  const hasFilter = !!(debouncedFilter || direction !== "all");
+  const outCount = displayLogs.filter((l) => l.direction === "out").length;
+  const inCount = displayLogs.filter((l) => l.direction === "in").length;
 
   // ── Render ────────────────────────────────────────────
   return (
@@ -254,7 +255,7 @@ export default function EventLog() {
           {/* Auto-scroll lock */}
           <IconBtn
             onClick={() => setAutoScroll((v) => !v)}
-            title={autoScroll ? 'Disable auto-scroll' : 'Enable auto-scroll'}
+            title={autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"}
             active={autoScroll}
             activeClass="text-emerald-400 border-emerald-500/20 bg-emerald-500/8"
           >
@@ -277,11 +278,12 @@ export default function EventLog() {
 
           {/* Pause / Resume */}
           <button
+            type="button"
             onClick={paused ? handleResume : handlePause}
             className={`flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg border transition-all ${
               paused
-                ? 'text-amber-400 border-amber-500/30 bg-amber-500/8 hover:bg-amber-500/15'
-                : 'text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800'
+                ? "text-amber-400 border-amber-500/30 bg-amber-500/8 hover:bg-amber-500/15"
+                : "text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800"
             }`}
           >
             {paused ? (
@@ -300,12 +302,13 @@ export default function EventLog() {
           {/* Export */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setExportOpen((v) => !v)}
               disabled={displayLogs.length === 0}
               className={`flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
                 exportOpen
-                  ? 'text-zinc-200 border-zinc-600 bg-zinc-800'
-                  : 'text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800'
+                  ? "text-zinc-200 border-zinc-600 bg-zinc-800"
+                  : "text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800"
               }`}
             >
               <Download className="w-3 h-3" />
@@ -322,6 +325,7 @@ export default function EventLog() {
           {/* Clear */}
           {displayLogs.length > 0 && (
             <button
+              type="button"
               onClick={handleClear}
               className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-2.5 py-1.5 rounded-lg border border-zinc-800 hover:border-red-500/20 hover:bg-red-500/5"
             >
@@ -336,17 +340,18 @@ export default function EventLog() {
       <div className="px-3 py-2 border-b border-zinc-800 flex flex-col gap-2 shrink-0">
         {/* Direction toggle */}
         <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-0.5">
-          {(['all', 'out', 'in'] as const).map((d) => {
+          {(["all", "out", "in"] as const).map((d) => {
             const conf = DIRECTION_CONFIG[d];
             const isActive = direction === d;
             return (
               <button
+                type="button"
                 key={d}
                 onClick={() => setDirection(d)}
                 className={`flex-1 flex items-center justify-center gap-1.5 text-[10px] font-medium px-2 py-1.5 rounded-md transition-all duration-150 border ${
                   isActive
                     ? conf.activeClass
-                    : 'text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800'
+                    : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800"
                 }`}
               >
                 {conf.icon}
@@ -360,16 +365,16 @@ export default function EventLog() {
         <div
           className={`flex items-center gap-2 bg-zinc-900 border rounded-lg px-3 h-8 transition-all ${
             regexError
-              ? 'border-red-500/60 shadow-[0_0_0_2px_rgba(239,68,68,0.08)]'
+              ? "border-red-500/60 shadow-[0_0_0_2px_rgba(239,68,68,0.08)]"
               : searchFocus
-                ? 'border-zinc-500'
+                ? "border-zinc-500"
                 : debouncedFilter
-                  ? 'border-zinc-600'
-                  : 'border-zinc-800 hover:border-zinc-700'
+                  ? "border-zinc-600"
+                  : "border-zinc-800 hover:border-zinc-700"
           }`}
         >
           <Search
-            className={`w-3 h-3 shrink-0 transition-colors ${searchFocus ? 'text-zinc-400' : 'text-zinc-700'}`}
+            className={`w-3 h-3 shrink-0 transition-colors ${searchFocus ? "text-zinc-400" : "text-zinc-700"}`}
           />
           <input
             value={filterInput}
@@ -381,7 +386,8 @@ export default function EventLog() {
           />
           {filterInput && (
             <button
-              onClick={() => setFilterInput('')}
+              type="button"
+              onClick={() => setFilterInput("")}
               className="text-zinc-600 hover:text-zinc-300 shrink-0"
             >
               <X className="w-3 h-3" />
@@ -412,7 +418,7 @@ export default function EventLog() {
                     isExpanded={expanded.has(log.id)}
                     isAckExpanded={expandedAck.has(log.id)}
                     isPinned
-                    tsMode={'absolute'}
+                    tsMode={"absolute"}
                     onToggle={() => toggle(log.id)}
                     onToggleAck={() => toggleAck(log.id)}
                     onTogglePin={() => togglePin(log.id)}
@@ -429,7 +435,7 @@ export default function EventLog() {
                 isExpanded={expanded.has(log.id)}
                 isAckExpanded={expandedAck.has(log.id)}
                 isPinned={false}
-                tsMode={'absolute'}
+                tsMode={"absolute"}
                 onToggle={() => toggle(log.id)}
                 onToggleAck={() => toggleAck(log.id)}
                 onTogglePin={() => togglePin(log.id)}

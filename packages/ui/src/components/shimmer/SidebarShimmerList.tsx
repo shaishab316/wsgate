@@ -21,6 +21,7 @@ export function SidebarShimmerList() {
   return (
     <div className="flex flex-col py-2 px-2 gap-1">
       {Array.from({ length: 7 }).map((_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: this is a static list of placeholders, not dynamic data
         <div key={i} className="flex flex-col gap-1.5 px-3 py-2.5 rounded-lg">
           {/* Icon + name + badge */}
           <div className="flex items-center gap-2">

@@ -7,33 +7,33 @@
  * @packageDocumentation
  */
 
-import { useEffect, useState, useRef } from 'react';
 import {
-  Radio,
-  Send,
-  Search,
-  X,
-  Sparkles,
-  Keyboard,
   Download,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useWsgateStore } from '@/store/wsgate.store';
-import { useSocketStore } from '@/hooks/useSocket';
-import type { WsEvent, WsEventsResponse } from '@/types/ws-event';
-import { NamespaceBar } from './sub-components/NamespaceBar';
+  Keyboard,
+  Radio,
+  Search,
+  Send,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { useSocketStore } from "@/hooks/useSocket";
 import {
   filterEvents,
   getUniqueNamespaces,
   groupByNamespaceThenGateway,
   namespaceColor,
-} from '@/lib/utils';
-import { SidebarShimmerList } from './shimmer/SidebarShimmerList';
-import { ErrorState } from './sub-components/ErrorState';
-import { EmptySearch } from './sub-components/EmptySearch';
-import { NamespaceSectionHeader } from './sub-components/NamespaceSectionHeader';
-import { GatewayHeader } from './sub-components/GatewayHeader';
-import { EventRow } from './sub-components/EventRow';
+} from "@/lib/utils";
+import { useWsgateStore } from "@/store/wsgate.store";
+import type { WsEvent, WsEventsResponse } from "@/types/ws-event";
+import { SidebarShimmerList } from "./shimmer/SidebarShimmerList";
+import { EmptySearch } from "./sub-components/EmptySearch";
+import { ErrorState } from "./sub-components/ErrorState";
+import { EventRow } from "./sub-components/EventRow";
+import { GatewayHeader } from "./sub-components/GatewayHeader";
+import { NamespaceBar } from "./sub-components/NamespaceBar";
+import { NamespaceSectionHeader } from "./sub-components/NamespaceSectionHeader";
 
 /**
  * Sidebar component for the WebSocket Gateway UI.
@@ -78,11 +78,11 @@ export default function Sidebar() {
 
   // ── Local state ───────────────────────────────────────
 
-  const [events, setEvents] = useState<WsEvent[]>([]);
-  const [title, setTitle] = useState('nestjs-wsgate');
+  const [events, setEvents] = useState<WsEvent[] | null>([]);
+  const [title, setTitle] = useState("nestjs-wsgate");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [activeNamespace, setActiveNamespace] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -93,23 +93,23 @@ export default function Sidebar() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl+K (or Cmd+K) to focus search
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         searchInputRef.current?.focus();
         setShowKeyboardHint(false);
       }
       // Escape to clear search when focused
       if (
-        e.key === 'Escape' &&
+        e.key === "Escape" &&
         search &&
         document.activeElement === searchInputRef.current
       ) {
-        setSearch('');
+        setSearch("");
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [search]);
 
   // ── Fetch events ──────────────────────────────────────
@@ -150,6 +150,7 @@ export default function Sidebar() {
       });
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We only want to re-fetch when the URL changes, not when other dependencies (like setAvailableNamespaces) change
   useEffect(() => {
     fetchEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,7 +173,7 @@ export default function Sidebar() {
       try {
         const data = JSON.parse(e.target?.result as string) as WsEventsResponse;
         setEvents(data.events);
-        setTitle(data.title ?? 'nestjs-wsgate');
+        setTitle(data.title ?? "nestjs-wsgate");
         setActiveNamespace(null);
         setAvailableNamespaces(getUniqueNamespaces(data.events));
         setLoading(false);
@@ -195,14 +196,14 @@ export default function Sidebar() {
    * Serializes `{ title, events }` to match the WsEventsResponse shape.
    */
   function handleExport() {
-    const payload: WsEventsResponse = { title, events };
+    const payload: WsEventsResponse = { title, events: events ?? [] };
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: 'application/json',
+      type: "application/json",
     });
     const href = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = href;
-    a.download = 'events.json';
+    a.download = "events.json";
     a.click();
     URL.revokeObjectURL(href);
   }
@@ -210,7 +211,7 @@ export default function Sidebar() {
   // ── Derived — filtered + grouped ─────────────────────
 
   const namespaces = getUniqueNamespaces(events);
-  const filtered = filterEvents(events, search);
+  const filtered = filterEvents(events ?? [], search);
   const groupedByNs = groupByNamespaceThenGateway(filtered);
 
   // If a namespace filter is active, only show that namespace
@@ -232,8 +233,8 @@ export default function Sidebar() {
    * @param event - The WsEvent that was clicked.
    */
   function handleEventSelect(event: WsEvent) {
-    const eventNamespace = event.namespace ?? '/';
-    const isConnected = status === 'connected';
+    const eventNamespace = event.namespace ?? "/";
+    const isConnected = status === "connected";
 
     // If event is in a DIFFERENT namespace than currently selected AND socket is connected
     if (eventNamespace !== selectedNamespace && isConnected) {
@@ -283,7 +284,7 @@ export default function Sidebar() {
           </div>
 
           {/* Total event count */}
-          {events.length > 0 && (
+          {events?.length && (
             <Badge
               variant="outline"
               className="shrink-0 border-zinc-700 text-zinc-500 text-[10px] h-5 px-1.5 bg-zinc-900/50"
@@ -293,8 +294,9 @@ export default function Sidebar() {
           )}
 
           {/* Export events.json */}
-          {!loading && !error && events.length > 0 && (
+          {!loading && !error && events?.length && (
             <button
+              type="button"
               onClick={handleExport}
               title="Export events.json"
               className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-zinc-800/50 rounded"
@@ -306,14 +308,14 @@ export default function Sidebar() {
       </div>
 
       {/* ── Search input — only shown when events are loaded ── */}
-      {!loading && !error && events.length > 0 && (
+      {!loading && !error && events?.length && (
         <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
           <div className="flex flex-col gap-1.5">
             <div
               className={`flex items-center gap-2 h-8 bg-zinc-900 border rounded-lg px-3 transition-all duration-200 ${
                 search
-                  ? 'border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]'
-                  : 'border-zinc-800 hover:border-zinc-700'
+                  ? "border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]"
+                  : "border-zinc-800 hover:border-zinc-700"
               }`}
             >
               <Search className="w-3 h-3 text-zinc-600 shrink-0" />
@@ -326,8 +328,9 @@ export default function Sidebar() {
               />
               {search && (
                 <button
+                  type="button"
                   onClick={() => {
-                    setSearch('');
+                    setSearch("");
                     searchInputRef.current?.focus();
                   }}
                   className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
@@ -348,6 +351,7 @@ export default function Sidebar() {
                   <span>to search</span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowKeyboardHint(false)}
                   className="hover:text-zinc-400 transition-colors"
                 >
@@ -364,7 +368,7 @@ export default function Sidebar() {
         <NamespaceBar
           namespaces={namespaces}
           active={activeNamespace}
-          allEvents={events}
+          allEvents={events ?? []}
           onSelect={setActiveNamespace}
         />
       )}
@@ -385,11 +389,11 @@ export default function Sidebar() {
 
         {/* Empty search result */}
         {!loading && !error && filtered.length === 0 && search && (
-          <EmptySearch onClear={() => setSearch('')} />
+          <EmptySearch onClear={() => setSearch("")} />
         )}
 
         {/* No events loaded yet */}
-        {!loading && !error && events.length === 0 && (
+        {!loading && !error && !events?.length && (
           <div className="flex flex-col items-center justify-center px-5 py-12 gap-4 text-center">
             <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-500/10 to-purple-500/10 border border-zinc-800 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-blue-400" />
@@ -478,18 +482,18 @@ export default function Sidebar() {
       </div>
 
       {/* ── Footer — emit / subscribe legend + active namespace ── */}
-      {!loading && !error && events.length > 0 && (
+      {!loading && !error && events?.length && (
         <div className="px-4 py-2.5 border-t border-zinc-800 shrink-0 flex items-center gap-4 bg-zinc-950/50 backdrop-blur-sm">
           <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
             <Send className="w-2.5 h-2.5 text-blue-400" />
             <span className="text-[10px] text-zinc-600">
-              {events.filter((e) => e.type === 'emit').length} emit
+              {events.filter((e) => e.type === "emit").length} emit
             </span>
           </div>
           <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
             <Radio className="w-2.5 h-2.5 text-emerald-400" />
             <span className="text-[10px] text-zinc-600">
-              {events.filter((e) => e.type === 'subscribe').length} subscribe
+              {events.filter((e) => e.type === "subscribe").length} subscribe
             </span>
           </div>
           {/* Active namespace indicator */}
@@ -497,6 +501,7 @@ export default function Sidebar() {
             <>
               <div className="flex-1" />
               <button
+                type="button"
                 onClick={() => setActiveNamespace(null)}
                 title="Clear namespace filter"
                 className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors group px-2 py-1 rounded hover:bg-zinc-800/50"

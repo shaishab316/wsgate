@@ -1,5 +1,5 @@
-import { highlightJson, safeStringify } from "@/lib/utils";
 import { memo, useMemo } from "react";
+import { highlightJson, safeStringify } from "@/lib/utils";
 
 /**
  * Component that renders JSON data as highlighted, formatted HTML.
@@ -35,6 +35,7 @@ export const JsonViewer = memo(function JsonViewer({
     <pre
       className="text-[11.5px] bg-[#1e1e1e] leading-relaxed font-mono p-3 overflow-x-auto overflow-y-auto max-h-65 whitespace-pre-wrap wrap-break-word"
       // eslint-disable-next-line react/no-danger
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: This component is specifically designed to render syntax-highlighted JSON, which requires rendering HTML content. The `highlightJson` function is responsible for sanitizing and safely formatting the JSON string to prevent XSS vulnerabilities. We ensure that only trusted data is passed to this component.
       dangerouslySetInnerHTML={{ __html: highlighted }}
     />
   );

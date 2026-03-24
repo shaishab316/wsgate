@@ -7,28 +7,28 @@
  * @packageDocumentation
  */
 
-import { useState, useRef, useEffect } from "react";
-import { Panel, PanelGroup } from "react-resizable-panels";
 import {
-  Plug,
-  Unplug,
-  Loader2,
-  Server,
-  KeyRound,
   Eye,
   EyeOff,
-  Sun,
+  KeyRound,
+  Loader2,
   Moon,
+  Plug,
+  Server,
+  Sun,
+  Unplug,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useWsgateStore } from "@/store/wsgate.store";
-import { useSocketStore } from "@/hooks/useSocket";
-import { debounce } from "@/utils/debounce";
+import { useEffect, useRef, useState } from "react";
+import { Panel, PanelGroup } from "react-resizable-panels";
 import appIcon from "@/assets/icon.png";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useSocketStore } from "@/hooks/useSocket";
+import { useWsgateStore } from "@/store/wsgate.store";
+import { debounce } from "@/utils/debounce";
 import { STATUS_CONFIG } from "./sub-components/Config";
-import { NavResizeHandle } from "./sub-components/NavResizeHandle";
 import { NamespacePicker } from "./sub-components/NamespacePicker";
+import { NavResizeHandle } from "./sub-components/NavResizeHandle";
 
 /**
  * Navbar component for WSGate application.
@@ -107,7 +107,7 @@ export default function Navbar() {
   // ── Sync selected namespace from event + auto-disconnect ──
 
   useEffect(() => {
-    if (selectedEvent && selectedEvent.namespace) {
+    if (selectedEvent?.namespace) {
       const newNamespace = selectedEvent.namespace;
       // If namespace changed and socket is connected, disconnect old connection
       if (newNamespace !== selectedNamespace && isConnected) {
@@ -220,6 +220,7 @@ export default function Navbar() {
             {/* show / hide toggle */}
             {token && (
               <button
+                type="button"
                 onClick={() => setShowToken((v) => !v)}
                 title={showToken ? "Hide token" : "Show token"}
                 aria-label={showToken ? "Hide token" : "Show token"}
@@ -239,6 +240,7 @@ export default function Navbar() {
 
       {/* ── Theme Toggle ── */}
       <button
+        type="button"
         onClick={toggleTheme}
         className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all duration-200"
         title="Toggle theme"
