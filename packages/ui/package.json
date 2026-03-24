@@ -1,7 +1,7 @@
 {
   "name": "@wsgate/ui",
   "description": "The UI layer for the wsgate ecosystem",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "files": [
     "dist"
