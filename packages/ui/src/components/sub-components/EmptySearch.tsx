@@ -5,7 +5,12 @@ import { Search } from "lucide-react";
  *
  * This component is shown when events load successfully but none match
  * the current search query. It provides helpful information to the user
- * and offers a way to clear the search filter.
+ * and offers an accessible way to clear the search filter.
+ *
+ * @accessibility
+ * - Clear button has proper aria-label for screen readers
+ * - Focus indicators for keyboard navigation
+ * - Semantic button element for assistive technologies
  *
  * @component
  * @example
@@ -16,7 +21,7 @@ import { Search } from "lucide-react";
  * @param {Object} props - Component props
  * @param {() => void} props.onClear - Callback function to clear the search input
  *
- * @returns {JSX.Element} An empty state component with search icon, message, and clear button
+ * @returns {JSX.Element} An accessible empty state component with messaging and clear action
  */
 export function EmptySearch({ onClear }: { onClear: () => void }) {
   return (
@@ -28,10 +33,11 @@ export function EmptySearch({ onClear }: { onClear: () => void }) {
         <p className="text-sm font-semibold text-zinc-300">No results found</p>
         <p className="text-xs text-zinc-500 leading-relaxed">
           Try searching for different keywords or{" "}
-          <button
+        <button
             type="button"
             onClick={onClear}
-            className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+            aria-label="Clear search filter"
+            className="text-blue-400 hover:text-blue-300 transition-colors font-medium focus-visible:outline-none focus-visible:rounded focus-visible:ring-1 focus-visible:ring-blue-500/40 focus-visible:px-1"
           >
             clear your search
           </button>

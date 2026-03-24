@@ -27,16 +27,20 @@ export function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
+      className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${
+        copied
+          ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15"
+          : "border-zinc-700/50 text-zinc-400 bg-zinc-900/30 hover:border-zinc-600 hover:text-zinc-200 hover:bg-zinc-800/60"
+      }`}
     >
       {copied ? (
         <>
-          <Check className="size-3 text-emerald-400" />
-          <span className="text-emerald-400">Copied</span>
+          <Check className="size-3.5 text-emerald-400" />
+          <span>Copied</span>
         </>
       ) : (
         <>
-          <Copy className="size-3" />
+          <Copy className="size-3.5 text-zinc-500" />
           Copy
         </>
       )}

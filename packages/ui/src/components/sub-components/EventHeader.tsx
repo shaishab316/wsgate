@@ -6,7 +6,14 @@ import { Badge } from "../ui/badge";
  * Renders the header section of an event display component.
  *
  * Shows event metadata including namespace, event type (emit/receive), description,
- * and the complete call chain (namespace -> gateway -> handler).
+ * and the complete call chain visualization (namespace → gateway → handler).
+ * Provides clear visual hierarchy and semantic structure for event information.
+ *
+ * @accessibility
+ * - Proper heading hierarchy with semantic h2 for event name
+ * - Color coding used with text labels to convey meaning
+ * - Clear visual separation between event metadata and breadcrumb trail
+ * - Badge components with proper contrast ratios
  *
  * @component
  * @param {Object} props - Component props

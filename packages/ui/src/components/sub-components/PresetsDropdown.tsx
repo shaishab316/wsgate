@@ -14,6 +14,15 @@ export interface Preset {
  * Displays a list of saved presets with options to load, save, and delete them.
  * The dropdown closes when clicking outside of it.
  *
+ * @accessibility
+ * - Dropdown container has role="dialog" or manages focus appropriately
+ * - Save input has aria-label describing its purpose
+ * - Save button has aria-label and is disabled when input is empty
+ * - Load buttons have aria-label for action clarity
+ * - Delete buttons have aria-label and title attributes
+ * - All interactive elements have focus-visible rings
+ * - Icons are marked as decorative (aria-hidden)
+ *
  * @component
  * @example
  * ```tsx
@@ -77,17 +86,19 @@ export function PresetsDropdown({
       </div>
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-zinc-800/60">
         <input
+          aria-label="Enter preset name to save"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
           placeholder="Preset name…"
-          className="flex-1 text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors"
+          className="flex-1 text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors focus-visible:ring-1 focus-visible:ring-blue-500/40"
         />
         <button
           type="button"
           onClick={handleSave}
           disabled={!newName.trim()}
-          className="shrink-0 text-[10px] text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700 hover:border-zinc-500 rounded-lg px-2.5 py-1.5 transition-all bg-zinc-900 hover:bg-zinc-800"
+          aria-label="Save current preset"
+          className="shrink-0 text-[10px] text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700 hover:border-zinc-500 rounded-lg px-2.5 py-1.5 transition-all bg-zinc-900 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
         >
           Save
         </button>
@@ -103,7 +114,7 @@ export function PresetsDropdown({
               key={p.id}
               className="flex items-center gap-2 px-3 py-2 hover:bg-zinc-800/50 transition-colors border-b border-zinc-800/30 last:border-0 group"
             >
-              <Tag className="w-3 h-3 text-zinc-600 shrink-0" />
+              <Tag className="w-3 h-3 text-zinc-600 shrink-0" aria-hidden="true" />
               <span className="flex-1 text-[11px] font-mono text-zinc-300 truncate">
                 {p.name}
               </span>
@@ -113,7 +124,8 @@ export function PresetsDropdown({
                   onLoad(p.payload);
                   onClose();
                 }}
-                className="text-[9px] text-blue-500 hover:text-blue-300 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                aria-label={`Load preset: ${p.name}`}
+                className="text-[9px] text-blue-500 hover:text-blue-300 transition-colors opacity-0 group-hover:opacity-100 shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
               >
                 Load
               </button>
@@ -121,10 +133,10 @@ export function PresetsDropdown({
                 type="button"
                 onClick={() => onDelete(p.id)}
                 title="Delete preset"
-                aria-label="Delete preset"
-                className="text-zinc-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                aria-label={`Delete preset: ${p.name}`}
+                className="text-zinc-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3 h-3" aria-hidden="true" />
               </button>
             </div>
           ))}

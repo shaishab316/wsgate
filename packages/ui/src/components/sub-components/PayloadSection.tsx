@@ -5,6 +5,12 @@ import { JsonViewer } from "./JsonViewer";
 /**
  * Displays a collapsible payload section with formatted JSON data and copy functionality.
  *
+ * @accessibility
+ * - Section has role="region" with aria-label describing content type
+ * - Label is semantically associated with the JSON content
+ * - Copy button is adjacent to label for easy access
+ * - JSON viewer is within a labeled region for context
+ *
  * @component
  * @param {Object} props - The component props
  * @param {unknown} props.data - The data object to be displayed in JSON format
@@ -34,7 +40,7 @@ export function PayloadSection({
   extra?: React.ReactNode;
 }) {
   return (
-    <div className="border-t border-white/5 invert dark:invert-0">
+    <div role="region" aria-label={`${label} section with JSON data`} className="border-t border-white/5 invert dark:invert-0">
       <div className="flex items-center justify-between px-3 py-1.5 bg-black/20">
         <div className="flex items-center gap-2">
           <span

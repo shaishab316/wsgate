@@ -7,6 +7,17 @@ import { TYPE_CONFIG } from "./Config";
 /**
  * Displays a single event row in a list of WebSocket events.
  *
+ * Renders a selectable row with event type icon, name, optional description,
+ * and a copy button for quick access to event names. Provides clear visual
+ * feedback for selection state and hover interactions.
+ *
+ * @accessibility
+ * - Proper role="button" with keyboard support (Enter/Space keys)
+ * - Copy button has aria-label describing its action
+ * - Visible focus indicators for keyboard navigation
+ * - Color used with text labels to indicate event type
+ * - Tab index for keyboard accessibility
+ *
  * @component
  * @param {Object} props - The component props
  * @param {WsEvent} props.event - The WebSocket event to display
@@ -49,17 +60,19 @@ export function EventRow({
   };
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: The div is used for custom styling and interaction, but we ensure accessibility with role, tabIndex, and keyboard event handling.
+    // biome-ignore lint/a11y/useSemanticElements: The div is used for custom styling and interaction patterns; proper ARIA role, tabIndex, and keyboard event handling ensure full accessibility compliance
     <div
       onClick={onSelect}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
           onSelect();
         }
       }}
-      className={`w-full text-left px-3 py-2.5 rounded-lg flex flex-col gap-1 transition-all duration-150 mb-0.5 group border cursor-pointer ${
+      aria-pressed={isSelected}
+      className={`w-full text-left px-3 py-2.5 rounded-lg flex flex-col gap-1 transition-all duration-150 mb-0.5 group border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-zinc-950 ${
         isSelected
           ? "bg-blue-500/10 border-blue-500/30 shadow-[0_0_0_1px_rgba(59,130,246,0.1)]"
           : "border-transparent hover:bg-zinc-800/60 hover:border-zinc-700/50"
@@ -97,12 +110,13 @@ export function EventRow({
           {event.event}
         </span>
 
-        {/* Copy button */}
+      {/* Copy button */}
         <button
           type="button"
           onClick={handleCopy}
+          aria-label={`Copy event name: ${event.event}`}
           title="Copy event name"
-          className={`shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 ${
+          className={`shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
             copied
               ? "bg-emerald-500/20 text-emerald-400"
               : "hover:bg-zinc-800 text-zinc-600 hover:text-zinc-300"

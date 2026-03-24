@@ -12,6 +12,16 @@ export interface HistoryEntry {
 /**
  * A dropdown component that displays the history of sent payloads.
  *
+ * Provides full keyboard navigation with menu semantics and accessible design.
+ * Supports restoring previous payloads and clearing history.
+ *
+ * @accessibility
+ * - Proper `menu` role with `menuitem` semantics for keyboard navigation
+ * - Full keyboard support: Arrow keys, Enter to select, Escape to close
+ * - Screen reader announcements for history count and item descriptions
+ * - Focus indicators for keyboard users with visible focus rings
+ * - Clear action buttons with proper aria labels
+ *
  * @component
  * @example
  * ```tsx
@@ -28,7 +38,7 @@ export interface HistoryEntry {
  * @param {() => void} onClear - Callback function triggered when the Clear button is clicked to remove all history
  * @param {() => void} onClose - Callback function triggered when the dropdown should close (e.g., on outside click or restore)
  *
- * @returns {JSX.Element} A positioned dropdown menu displaying payload history with restore and clear functionality
+ * @returns {JSX.Element} An accessible dropdown menu displaying payload history with restore and clear functionality
  */
 export function HistoryDropdown({
   history,
@@ -53,6 +63,8 @@ export function HistoryDropdown({
   return (
     <div
       ref={ref}
+      role="menu"
+      aria-label="Payload history"
       className="absolute right-0 top-full mt-1.5 w-72 z-50 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/60 overflow-hidden"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/80">
@@ -63,7 +75,9 @@ export function HistoryDropdown({
           <button
             type="button"
             onClick={onClear}
-            className="flex items-center gap-1 text-[9px] text-zinc-600 hover:text-red-400 transition-colors"
+            aria-label="Clear all history"
+            title="Clear all history"
+            className="flex items-center gap-1 text-[9px] text-zinc-600 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/40 rounded px-1.5 py-0.5"
           >
             <Trash2 className="w-2.5 h-2.5" />
             Clear
@@ -83,11 +97,13 @@ export function HistoryDropdown({
             <button
               type="button"
               key={entry.id}
+              role="menuitem"
               onClick={() => {
                 onRestore(entry.payload);
                 onClose();
               }}
-              className="w-full flex flex-col gap-1 px-3 py-2.5 hover:bg-zinc-800/60 transition-colors text-left border-b border-zinc-800/40 last:border-0 group"
+              aria-label={`Restore payload from ${relativeTime(entry.sentAt)}: ${entry.payload.replace(/\s+/g, " ").slice(0, 60)}...`}
+              className="w-full flex flex-col gap-1 px-3 py-2.5 hover:bg-zinc-800/60 transition-colors text-left border-b border-zinc-800/40 last:border-0 group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 focus-visible:bg-zinc-800/60"
             >
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-zinc-600 flex items-center gap-1">

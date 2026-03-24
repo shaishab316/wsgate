@@ -9,6 +9,14 @@ import type { WsEvent } from "@/types/ws-event";
  * by namespace. Shows an "All" pill to view all events and individual pills for each namespace
  * with color-coded indicators and event counts.
  *
+ * @accessibility
+ * - All filter buttons have descriptive aria-labels
+ * - "All" button indicates current selection with aria-pressed
+ * - Each namespace button has aria-label with namespace and count information
+ * - Focus indicators visible on all interactive elements
+ * - Decorative icon marked with aria-hidden
+ * - Decorative dots marked with aria-hidden
+ *
  * @component
  * @example
  * ```tsx
@@ -46,7 +54,7 @@ export function NamespaceBar({
     <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
       {/* Section label */}
       <p className="text-[9px] font-semibold uppercase tracking-widest text-zinc-600 mb-1.5 flex items-center gap-1">
-        <Network className="w-2.5 h-2.5" />
+        <Network className="w-2.5 h-2.5" aria-hidden="true" />
         Namespace
       </p>
 
@@ -56,14 +64,16 @@ export function NamespaceBar({
         <button
           type="button"
           onClick={() => onSelect(null)}
-          className={`inline-flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full text-[10px] font-medium border transition-all duration-150 ${
+          aria-label={`Show all events (${allEvents.length} total)`}
+          aria-pressed={active === null}
+          className={`inline-flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full text-[10px] font-medium border transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
             active === null
               ? "border-blue-400/60 text-blue-300 bg-blue-500/10"
               : "border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
           }`}
         >
           {active === null && (
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" aria-hidden="true" />
           )}
           All
           <span
@@ -88,7 +98,9 @@ export function NamespaceBar({
               type="button"
               key={ns}
               onClick={() => onSelect(isActive ? null : ns)}
-              className={`inline-flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full text-[10px] font-mono font-medium border transition-all duration-150 ${
+              aria-label={`Filter by namespace: ${ns} (${count} events)`}
+              aria-pressed={isActive}
+              className={`inline-flex items-center gap-1.5 shrink-0 h-6 px-2.5 rounded-full text-[10px] font-mono font-medium border transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
                 isActive ? palette.active : palette.idle
               }`}
             >
@@ -96,6 +108,7 @@ export function NamespaceBar({
                 className={`w-1.5 h-1.5 rounded-full shrink-0 transition-opacity ${palette.dot} ${
                   isActive ? "opacity-100" : "opacity-50"
                 }`}
+                aria-hidden="true"
               />
               {ns}
               <span

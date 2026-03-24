@@ -458,7 +458,7 @@ export default function EventPanel() {
         <button
           type="button"
           onClick={() => setSelectedEvent(null)}
-          className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors z-10"
+          className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-zinc-700/80 transition-all duration-150 z-10 hover:scale-110"
         >
           <X className="w-4 h-4" />
         </button>
@@ -468,7 +468,7 @@ export default function EventPanel() {
           label="Response Shape"
         />
         <div className="flex items-center justify-between shrink-0">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
             Example Response
           </span>
           <CopyButton
@@ -498,14 +498,14 @@ export default function EventPanel() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 shrink-0">
-          <div className="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-500/8 border border-emerald-500/30 shrink-0">
+          <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
             <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400" />
           </div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
+          <p className="text-[13px] text-zinc-400 leading-relaxed">
             Server-emitted event. Watch the{" "}
-            <span className="text-zinc-200 font-medium">Event Log →</span> for
-            incoming payloads.
+            <span className="text-emerald-300 font-semibold">Event Log →</span>{" "}
+            for incoming payloads.
           </p>
         </div>
       </div>
@@ -519,7 +519,7 @@ export default function EventPanel() {
         <button
           type="button"
           onClick={() => setSelectedEvent(null)}
-          className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors z-10"
+          className="absolute top-5 right-5 p-1.5 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-zinc-700/80 transition-all duration-150 z-10 hover:scale-110"
         >
           <X className="w-4 h-4" />
         </button>
@@ -532,10 +532,10 @@ export default function EventPanel() {
 
         {selectedEvent.response && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
               Response event
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-mono border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 rounded-lg px-2 py-1">
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-mono border border-emerald-500/40 text-emerald-300 bg-emerald-500/10 rounded-lg px-2.5 py-1.5 font-semibold">
               <Radio className="w-2.5 h-2.5" />
               {selectedEvent.response}
             </span>
@@ -548,7 +548,7 @@ export default function EventPanel() {
           <div className="flex items-center justify-between shrink-0">
             {/* Left — label + live status badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
                 Payload (JSON)
               </span>
               <JsonValidityBadge payload={payload} />
@@ -563,7 +563,7 @@ export default function EventPanel() {
 
               <button
                 onClick={handleFormat}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
+                className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-200 transition-all duration-150 px-2.5 py-1.5 rounded-md hover:bg-zinc-700/50"
                 title="Format JSON (Alt+Shift+F)"
                 type="button"
               >
@@ -573,7 +573,7 @@ export default function EventPanel() {
 
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1 rounded-md hover:bg-zinc-800"
+                className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-200 transition-all duration-150 px-2.5 py-1.5 rounded-md hover:bg-zinc-700/50"
                 title="Reset to skeleton"
                 type="button"
               >
@@ -592,7 +592,7 @@ export default function EventPanel() {
                     setPresetsOpen(false);
                   }}
                   title="Insert faker variable (Ctrl+Space)"
-                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${fakerOpen ? "text-violet-300 bg-zinc-800 border border-violet-500/30" : "text-zinc-600 hover:text-violet-300 hover:bg-zinc-800 border border-transparent"}`}
+                  className={`flex items-center gap-1.5 text-[11px] transition-all duration-150 px-2.5 py-1.5 rounded-md font-medium ${fakerOpen ? "text-violet-300 bg-zinc-700/60 border border-violet-500/40 shadow-lg shadow-violet-900/20" : "text-zinc-500 hover:text-violet-300 hover:bg-zinc-700/40 border border-transparent"}`}
                   type="button"
                 >
                   <Sparkles className="w-3 h-3" />
@@ -614,13 +614,13 @@ export default function EventPanel() {
                     setPresetsOpen(false);
                     setFakerOpen(false);
                   }}
-                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${historyOpen ? "text-zinc-200 bg-zinc-800" : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"}`}
+                  className={`flex items-center gap-1.5 text-[11px] transition-all duration-150 px-2.5 py-1.5 rounded-md font-medium ${historyOpen ? "text-zinc-100 bg-zinc-700/60 border border-zinc-600/60 shadow-lg shadow-zinc-900/20" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700/40 border border-transparent"}`}
                   type="button"
                 >
                   <History className="w-3 h-3" />
                   History
                   {history.length > 0 && (
-                    <span className="text-[8px] font-mono text-zinc-500 bg-zinc-800 rounded px-1">
+                    <span className="text-[9px] font-mono font-semibold text-zinc-400 bg-zinc-700/50 rounded px-1.5">
                       {history.length}
                     </span>
                   )}
@@ -643,7 +643,7 @@ export default function EventPanel() {
                     setHistoryOpen(false);
                     setFakerOpen(false);
                   }}
-                  className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md ${presetsOpen ? "text-zinc-200 bg-zinc-800" : "text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800"}`}
+                  className={`flex items-center gap-1.5 text-[11px] transition-all duration-150 px-2.5 py-1.5 rounded-md font-medium ${presetsOpen ? "text-zinc-100 bg-zinc-700/60 border border-zinc-600/60 shadow-lg shadow-zinc-900/20" : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700/40 border border-transparent"}`}
                   type="button"
                 >
                   {presets.length > 0 ? (
@@ -653,7 +653,7 @@ export default function EventPanel() {
                   )}
                   Presets
                   {presets.length > 0 && (
-                    <span className="text-[8px] font-mono text-zinc-500 bg-zinc-800 rounded px-1">
+                    <span className="text-[9px] font-mono font-semibold text-zinc-400 bg-zinc-700/50 rounded px-1.5">
                       {presets.length}
                     </span>
                   )}
@@ -675,7 +675,7 @@ export default function EventPanel() {
               {/* Code gen */}
               <button
                 onClick={() => setCodeGenOpen(true)}
-                className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-200 transition-all duration-150 px-2.5 py-1.5 rounded-lg border border-zinc-700 hover:border-zinc-500 hover:bg-zinc-800"
+                className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-zinc-100 transition-all duration-150 px-2.5 py-1.5 rounded-lg border border-zinc-700/60 hover:border-zinc-600 hover:bg-zinc-700/50 font-medium"
                 title="Generate client code"
                 type="button"
               >
@@ -687,7 +687,7 @@ export default function EventPanel() {
 
               <div className="relative">
                 {emitSuccess ? (
-                  <span className="invert dark:invert-0 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border bg-emerald-600/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                  <span className="invert dark:invert-0 flex items-center gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-lg border bg-emerald-600/25 border-emerald-500/60 text-emerald-300 shadow-lg shadow-emerald-900/30">
                     <Check className="w-4 h-4" />
                     Emitted!
                   </span>
@@ -699,9 +699,9 @@ export default function EventPanel() {
                     title={
                       connected ? "Emit event (Ctrl+Enter)" : "Connect first"
                     }
-                    className={`invert dark:invert-0 flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                    className={`invert dark:invert-0 flex items-center gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-lg border transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
                       connected
-                        ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/40 hover:scale-[1.02] active:scale-[0.98]"
+                        ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
                         : "bg-zinc-800 border-zinc-700 text-zinc-500"
                     }`}
                   >
@@ -776,9 +776,9 @@ export default function EventPanel() {
 
         {/* Not connected */}
         {!connected && (
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0">
-            <WifiOff className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
-            <p className="text-xs text-zinc-600">
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-zinc-900/60 border border-zinc-800/60 shrink-0">
+            <WifiOff className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            <p className="text-[13px] text-zinc-400">
               Connect to a server from the navbar to emit events
             </p>
           </div>

@@ -18,6 +18,16 @@ type TimestampMode = "absolute" | "relative";
 /**
  * Renders a single log entry with collapsible payload and acknowledgment sections.
  *
+ * @accessibility
+ * - Main wrapper has role="button" with aria-label describing event and direction
+ * - aria-expanded indicates if payload section is expanded
+ * - Event name button has descriptive aria-label for filtering
+ * - ACK badge has aria-label and aria-expanded
+ * - Pin button has aria-label indicating current state
+ * - Focus indicators visible on all interactive elements
+ * - Chevron icon is decorative (aria-hidden)
+ * - Arrow direction icon is decorative (aria-hidden)
+ *
  * @component
  * @example
  * ```tsx
@@ -117,10 +127,12 @@ export const LogEntry = memo(function LogEntry({
       <div
         role="button"
         tabIndex={0}
+        aria-label={`${isOut ? "Sent" : "Received"} ${log.event}${isExpanded ? " (expanded)" : ""}`}
+        aria-expanded={hasData ? isExpanded : undefined}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") onToggle();
         }}
-        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer"
+        className="flex items-center gap-2 px-3 py-2.5 cursor-pointer focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-1 focus-visible:ring-blue-500/40"
         onClick={onToggle}
       >
         {/* Direction */}
@@ -132,9 +144,9 @@ export const LogEntry = memo(function LogEntry({
           }`}
         >
           {isOut ? (
-            <ArrowUp className="w-3 h-3" />
+            <ArrowUp className="w-3 h-3" aria-hidden="true" />
           ) : (
-            <ArrowDown className="w-3 h-3" />
+            <ArrowDown className="w-3 h-3" aria-hidden="true" />
           )}
         </div>
 
@@ -145,8 +157,9 @@ export const LogEntry = memo(function LogEntry({
             e.stopPropagation();
             onFilterByEvent(log.event);
           }}
+          aria-label={`Filter by event: ${log.event}`}
           title={`Filter: "${log.event}"`}
-          className={`w-fit text-xs font-mono font-medium truncate text-left hover:underline underline-offset-2 ${
+          className={`w-fit text-xs font-mono font-medium truncate text-left hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
             isOut
               ? "text-blue-300 hover:text-blue-200"
               : "text-emerald-300 hover:text-emerald-200"
@@ -154,6 +167,7 @@ export const LogEntry = memo(function LogEntry({
         >
           {log.event}
         </button>
+        <div className="flex-1"></div>
 
         {latencyMs !== null && <LatencyChip ms={latencyMs} />}
 
@@ -165,18 +179,20 @@ export const LogEntry = memo(function LogEntry({
               e.stopPropagation();
               onToggleAck();
             }}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg border font-semibold transition-all text-[9px] shrink-0 ${
+            aria-label={`Acknowledgment${isAckExpanded ? " (expanded)" : ""}`}
+            aria-expanded={isAckExpanded}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg border font-semibold transition-all text-[9px] shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
               isAckExpanded
                 ? "border-purple-500/50 text-purple-200 bg-purple-500/20"
                 : "border-purple-500/30 text-purple-600 bg-purple-500/5 hover:text-purple-400"
             }`}
           >
-            <Check className="w-2.5 h-2.5" />
+            <Check className="w-2.5 h-2.5" aria-hidden="true" />
             ACK
             {isAckExpanded ? (
-              <ChevronUp className="w-2.5 h-2.5" />
+              <ChevronUp className="w-2.5 h-2.5" aria-hidden="true" />
             ) : (
-              <ChevronDown className="w-2.5 h-2.5" />
+              <ChevronDown className="w-2.5 h-2.5" aria-hidden="true" />
             )}
           </button>
         )}
@@ -196,17 +212,18 @@ export const LogEntry = memo(function LogEntry({
             e.stopPropagation();
             onTogglePin();
           }}
+          aria-label={isPinned ? "Unpin this entry" : "Pin this entry"}
           title={isPinned ? "Unpin" : "Pin this entry"}
-          className={`shrink-0 p-0.5 rounded-md transition-all ${
+          className={`shrink-0 p-0.5 rounded-md transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
             isPinned
               ? "text-amber-400 opacity-100"
               : "text-zinc-700 opacity-0 group-hover:opacity-100 hover:text-amber-400 hover:bg-zinc-800"
           }`}
         >
           {isPinned ? (
-            <PinOff className="w-3 h-3" />
+            <PinOff className="w-3 h-3" aria-hidden="true" />
           ) : (
-            <Pin className="w-3 h-3" />
+            <Pin className="w-3 h-3" aria-hidden="true" />
           )}
         </button>
 
@@ -214,6 +231,7 @@ export const LogEntry = memo(function LogEntry({
         {hasData && (
           <span
             className={`shrink-0 ${isExpanded ? "text-zinc-400" : "text-zinc-700"}`}
+            aria-hidden="true"
           >
             {isExpanded ? (
               <ChevronUp className="w-3.5 h-3.5" />

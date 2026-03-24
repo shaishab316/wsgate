@@ -4,6 +4,17 @@ import { useState } from "react";
 /**
  * A dropdown component for selecting a namespace from available options.
  *
+ * Provides accessible namespace selection with keyboard navigation support,
+ * clear visual feedback, and semantic HTML for screen readers.
+ *
+ * @accessibility
+ * - `role="menu"` and `role="menuitem"` semantics for proper announcement
+ * - Button has `aria-haspopup` and `aria-expanded` for state indication
+ * - Each option has descriptive aria-label
+ * - Keyboard shortcuts: Enter to open/select, Escape to close
+ * - Focus indicators on all interactive elements
+ * - Check icon indicates selected namespace
+ *
  * @component
  * @example
  * ```tsx
@@ -21,7 +32,7 @@ import { useState } from "react";
  * @param {(ns: string) => void} props.onSelect - Callback function invoked when a namespace is selected
  * @param {boolean} props.disabled - Whether the picker is disabled and non-interactive
  *
- * @returns {React.ReactElement | null} A dropdown button component that opens a menu of selectable namespaces, or null if no namespaces are available
+ * @returns {React.ReactElement | null} An accessible dropdown for namespace selection, or null if no namespaces available
  */
 export function NamespacePicker({
   selectedNamespace,
@@ -75,7 +86,10 @@ export function NamespacePicker({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center gap-2 h-9 px-3 rounded-lg border transition-all duration-200 ${
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-label={`Namespace selector, currently selected: ${selectedNamespace ? getDisplayName(selectedNamespace) : "none"}`}
+        className={`flex items-center gap-2 h-9 px-3 rounded-lg border transition-all duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${
           disabled
             ? "border-zinc-800 opacity-50 cursor-not-allowed"
             : "border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-zinc-100"
@@ -90,24 +104,31 @@ export function NamespacePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg shadow-black/50 z-50 overflow-hidden">
+        <div 
+          role="menu" 
+          aria-label="Namespace options"
+          className="absolute top-full right-0 mt-2 w-48 bg-zinc-900 border border-zinc-700 rounded-lg shadow-lg shadow-black/50 z-50 overflow-hidden focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
+        >
           {availableNamespaces.map((ns) => {
             const isActive = selectedNamespace === ns;
             return (
               <button
                 type="button"
                 key={ns}
+                role="menuitem"
                 onClick={() => {
                   onSelect(ns);
                   setIsOpen(false);
                 }}
-                className={`w-full px-4 py-2.5 flex items-center justify-between text-sm font-medium border-l-2 transition-all duration-150 ${getColorClass(
+                aria-label={`Select ${getDisplayName(ns)} namespace${isActive ? " (currently selected)" : ""}`}
+                aria-current={isActive ? "page" : undefined}
+                className={`w-full px-4 py-2.5 flex items-center justify-between text-sm font-medium border-l-2 transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 focus-visible:bg-zinc-800 ${getColorClass(
                   ns,
                   isActive,
                 )} hover:bg-zinc-800/50`}
               >
                 <span>{getDisplayName(ns)}</span>
-                {isActive && <Check className="w-4 h-4 text-emerald-400" />}
+                {isActive && <Check className="w-4 h-4 text-emerald-400" aria-hidden="true" />}
               </button>
             );
           })}

@@ -6,19 +6,27 @@ import type { Log } from "@/store/wsgate.store";
 /**
  * ExportMenu component for exporting logs in various formats.
  *
- * Provides a dropdown menu with options to:
+ * Provides an accessible dropdown menu with options to:
  * - Download all logs as JSON
  * - Download only emitted events as JSON
  * - Copy all logs to clipboard
  *
- * The menu automatically closes when clicking outside of it.
+ * The menu automatically closes when clicking outside of it. Supports keyboard
+ * navigation and screen reader announcements.
+ *
+ * @accessibility
+ * - `role="menu"` semantics for proper dropdown menu behavior
+ * - All export options have descriptive aria-labels
+ * - Focus indicators on all menu items
+ * - Keyboard support: Enter to select export option
+ * - Automatic close on outside click or selection
  *
  * @component
  * @param {Object} props - The component props
  * @param {Log[]} props.logs - Array of log entries to export
  * @param {() => void} props.onClose - Callback function triggered when the menu should close
  *
- * @returns {JSX.Element} A dropdown menu positioned absolutely with export options
+ * @returns {JSX.Element} An accessible dropdown menu positioned absolutely with export options
  *
  * @example
  * const [logs, setLogs] = useState<Log[]>([]);
@@ -97,6 +105,8 @@ export function ExportMenu({
   return (
     <div
       ref={ref}
+      role="menu"
+      aria-label="Export options"
       className="absolute right-0 top-full mt-1.5 w-52 z-50 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/60 overflow-hidden"
     >
       <div className="px-3 py-2 border-b border-zinc-800/80">
@@ -109,8 +119,10 @@ export function ExportMenu({
           <button
             type="button"
             key={item.label}
+            role="menuitem"
             onClick={item.fn}
-            className="flex items-center gap-2.5 px-3 py-2 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors text-left"
+            aria-label={item.label}
+            className="flex items-center gap-2.5 px-3 py-2 text-[11px] text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 focus-visible:bg-zinc-800/60"
           >
             {item.icon}
             {item.label}

@@ -3,6 +3,13 @@
  *
  * Used throughout the UI for toggling, filtering, and control actions.
  * Supports active/inactive states with full customization via Tailwind classes.
+ * Provides enhanced keyboard navigation and screen reader support.
+ *
+ * @accessibility
+ * - Automatically sets `aria-label` from `title` prop for screen readers
+ * - Focus ring visible on keyboard navigation (focus-visible ring)
+ * - Proper semantic button element for assistive technologies
+ * - Title appears as tooltip on hover and in browser accessibility tree
  *
  * @example
  * ```tsx
@@ -17,7 +24,7 @@
  * ```
  *
  * @param onClick - Callback fired when button is clicked
- * @param title - Tooltip text shown on hover (also used as aria-label)
+ * @param title - Tooltip text shown on hover AND used as aria-label for accessibility
  * @param active - Whether button is in active state (shows activeClass)
  * @param activeClass - Tailwind classes applied when active. Default: blue theme
  * @param children - Icon or element to render inside button (usually lucide-react icon)
@@ -40,7 +47,8 @@ export function IconBtn({
       type="button"
       onClick={onClick}
       title={title}
-      className={`p-1.5 rounded-md border transition-all ${
+      aria-label={title}
+      className={`p-1.5 rounded-md border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-zinc-950 ${
         active
           ? activeClass
           : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800"

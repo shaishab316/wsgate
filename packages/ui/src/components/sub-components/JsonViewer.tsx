@@ -7,6 +7,12 @@ import { highlightJson, safeStringify } from "@/lib/utils";
  * This component safely converts unknown data to a JSON string, applies syntax highlighting,
  * and displays it in a scrollable pre-formatted container with monospace font.
  *
+ * @accessibility
+ * - Rendered as `<pre>` element for semantic block code representation
+ * - Content is read aloud by screen readers as preformatted text
+ * - Syntax highlighting is visual only; structure conveyed through JSON text content
+ * - Scrollable container may need keyboard navigation support if focused
+ *
  * @component
  * @example
  * ```tsx

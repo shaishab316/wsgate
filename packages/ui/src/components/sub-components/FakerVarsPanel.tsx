@@ -9,6 +9,14 @@ import { FAKER_VARS, type FakerVarDef } from "@/lib/faker";
  * Variables can be inserted into the editor by clicking on them or via keyboard shortcuts.
  * The panel closes when clicking outside of it.
  *
+ * @accessibility
+ * - Search input has clear aria-label for screen reader users
+ * - Each variable button includes aria-label with full name and description
+ * - Decorative elements marked with aria-hidden
+ * - Focus ring visible on interactive elements
+ * - Dismiss button marked with aria-label
+ * - Empty state announces "No variables match" as status
+ *
  * @component
  * @param {Object} props - The component props
  * @param {(snippet: string) => void} props.onInsert - Callback fired when a variable is selected for insertion
@@ -92,10 +100,11 @@ export function FakerVarsPanel({
       {/* Search */}
       <div className="px-3 py-2 border-b border-zinc-800/50 shrink-0">
         <input
+          aria-label="Search faker variables by name or description"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search variables…"
-          className="w-full text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors"
+          className="w-full text-[11px] bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-200 placeholder:text-zinc-700 font-mono outline-none focus:border-zinc-600 transition-colors focus-visible:ring-1 focus-visible:ring-blue-500/40"
         />
       </div>
 
@@ -118,7 +127,8 @@ export function FakerVarsPanel({
                   onInsert(`{{${name}}}`);
                   onClose();
                 }}
-                className="w-full flex items-start gap-2.5 px-3 py-2 hover:bg-zinc-800/60 transition-colors text-left group border-b border-zinc-800/20 last:border-0"
+                aria-label={`Insert ${name} - ${def.description}`}
+                className="w-full flex items-start gap-2.5 px-3 py-2 hover:bg-zinc-800/60 transition-colors text-left group border-b border-zinc-800/20 last:border-0 focus-visible:ring-inset focus-visible:ring-1 focus-visible:ring-blue-500/40"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -133,7 +143,7 @@ export function FakerVarsPanel({
                     eg. {def.example}
                   </p>
                 </div>
-                <span className="text-[9px] text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1">
+                <span className="text-[9px] text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1" aria-hidden="true">
                   Insert →
                 </span>
               </button>

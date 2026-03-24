@@ -3,6 +3,12 @@ import { Activity } from "lucide-react";
 /**
  * Stream Separator component that displays a visual divider with an activity icon and "Stream" label.
  *
+ * @accessibility
+ * - Separator has role="separator" and aria-label describing divider purpose
+ * - Decorative icon is marked with aria-hidden
+ * - Text clearly indicates "Stream" section
+ * - Visual divider provides clear visual separation
+ *
  * @component
  * @returns {JSX.Element} A flex container with an activity icon, "Stream" text label, and a horizontal line separator.
  *
@@ -11,8 +17,8 @@ import { Activity } from "lucide-react";
  */
 export function StreamSeparator() {
   return (
-    <div className="flex items-center gap-2 px-1 py-1">
-      <Activity className="w-2.5 h-2.5 text-zinc-600" />
+    <div className="flex items-center gap-2 px-1 py-1" role="separator" aria-label="Stream section divider">
+      <Activity className="w-2.5 h-2.5 text-zinc-600" aria-hidden="true" />
       <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-700">
         Stream
       </span>

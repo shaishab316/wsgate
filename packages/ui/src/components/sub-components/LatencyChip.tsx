@@ -2,12 +2,21 @@ import { Timer } from "lucide-react";
 import { formatLatency } from "@/lib/utils";
 
 /**
- * Determines the color styling based on latency in milliseconds.
- * - Green (emerald): < 100ms - Excellent latency
- * - Yellow (amber): 100-499ms - Acceptable latency
- * - Red: >= 500ms - Poor latency
+ * Displays a latency indicator with color-coded performance feedback.
+ *
+ * Determines the color styling based on latency in milliseconds:
+ * - Green (emerald): < 100ms — Excellent latency
+ * - Yellow (amber): 100-499ms — Acceptable latency
+ * - Red: ≥ 500ms — Poor latency
+ *
+ * @accessibility
+ * - Uses both color and formatted text to convey latency status
+ * - Accessible title/aria-label describes the latency value clearly
+ * - Timer icon is decorative with aria-hidden
+ * - High contrast text for readability
+ *
  * @param {number} ms - The latency value in milliseconds
- * @returns {string} Tailwind CSS class string for text color, border color, and background color
+ * @returns {JSX.Element} A styled chip displaying latency with icon and formatted time
  */
 export function LatencyChip({ ms }: { ms: number }) {
   const color =
@@ -18,10 +27,11 @@ export function LatencyChip({ ms }: { ms: number }) {
         : "text-red-400 border-red-500/25 bg-red-500/8";
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[9px] font-mono border rounded-md px-1.5 py-0.5 shrink-0 ${color}`}
+      aria-label={`ACK latency: ${ms} milliseconds`}
       title={`ACK latency: ${ms}ms`}
+      className={`inline-flex items-center gap-1 text-[9px] font-mono border rounded-md px-1.5 py-0.5 shrink-0 ${color}`}
     >
-      <Timer className="w-2 h-2" />
+      <Timer className="w-2 h-2" aria-hidden="true" />
       {formatLatency(ms)}
     </span>
   );

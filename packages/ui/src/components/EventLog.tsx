@@ -203,22 +203,22 @@ export default function EventLog() {
       <div className="px-4 pt-3 pb-2 border-b border-zinc-800 shrink-0 flex flex-col gap-2">
         {/* Row 1 — title + counters */}
         <div className="flex items-center gap-2 min-w-0">
-          <ScrollText className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-          <h2 className="text-sm font-semibold text-zinc-100 shrink-0">
+          <ScrollText className="w-4 h-4 text-blue-400 shrink-0" />
+          <h2 className="text-base font-bold text-zinc-50 shrink-0">
             Event Log
           </h2>
 
           {displayLogs.length > 0 && (
             <Badge
               variant="outline"
-              className="text-[10px] border-zinc-700 text-zinc-500 px-1.5 h-4 shrink-0"
+              className="text-[11px] border-zinc-600 text-zinc-300 px-2 h-5 shrink-0 font-medium"
             >
               {filteredLogs.length}/{displayLogs.length}
             </Badge>
           )}
 
           {paused && pendingCount > 0 && (
-            <span className="text-[9px] font-mono text-amber-400 border border-amber-500/25 bg-amber-500/8 rounded-md px-1.5 py-0.5 shrink-0 animate-pulse">
+            <span className="text-[10px] font-mono font-semibold text-amber-300 border border-amber-500/50 bg-amber-500/15 rounded-md px-2 py-0.5 shrink-0 animate-pulse">
               +{pendingCount} pending
             </span>
           )}
@@ -228,20 +228,22 @@ export default function EventLog() {
           {/* Inline stats */}
           {displayLogs.length > 0 && (
             <div className="flex items-center gap-3 shrink-0">
-              <span className="flex items-center gap-1">
-                <ArrowUp className="w-2.5 h-2.5 text-blue-400" />
-                <span className="text-[10px] text-zinc-600">
+              <span className="flex items-center gap-1.5">
+                <ArrowUp className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-[11px] font-medium text-blue-300">
                   {outCount} out
                 </span>
               </span>
-              <span className="flex items-center gap-1">
-                <ArrowDown className="w-2.5 h-2.5 text-emerald-400" />
-                <span className="text-[10px] text-zinc-600">{inCount} in</span>
+              <span className="flex items-center gap-1.5">
+                <ArrowDown className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-[11px] font-medium text-emerald-300">
+                  {inCount} in
+                </span>
               </span>
               {pinnedIds.size > 0 && (
-                <span className="flex items-center gap-1">
-                  <Pin className="w-2.5 h-2.5 text-amber-400" />
-                  <span className="text-[10px] text-amber-600/70">
+                <span className="flex items-center gap-1.5">
+                  <Pin className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-[11px] font-medium text-amber-300">
                     {pinnedIds.size} pinned
                   </span>
                 </span>
@@ -280,20 +282,20 @@ export default function EventLog() {
           <button
             type="button"
             onClick={paused ? handleResume : handlePause}
-            className={`flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg border transition-all ${
+            className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all ${
               paused
-                ? "text-amber-400 border-amber-500/30 bg-amber-500/8 hover:bg-amber-500/15"
-                : "text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800"
+                ? "text-amber-300 border-amber-500/50 bg-amber-500/20 hover:bg-amber-500/25"
+                : "text-zinc-400 border-zinc-700 hover:text-zinc-100 hover:bg-zinc-700"
             }`}
           >
             {paused ? (
               <>
-                <Play className="w-3 h-3" />
+                <Play className="w-3.5 h-3.5" />
                 Resume
               </>
             ) : (
               <>
-                <Pause className="w-3 h-3" />
+                <Pause className="w-3.5 h-3.5" />
                 Pause
               </>
             )}
@@ -305,13 +307,13 @@ export default function EventLog() {
               type="button"
               onClick={() => setExportOpen((v) => !v)}
               disabled={displayLogs.length === 0}
-              className={`flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
+              className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
                 exportOpen
-                  ? "text-zinc-200 border-zinc-600 bg-zinc-800"
-                  : "text-zinc-500 border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800"
+                  ? "text-zinc-100 border-cyan-600/50 bg-cyan-500/15"
+                  : "text-zinc-400 border-zinc-700 hover:text-cyan-300 hover:border-cyan-600/30 hover:bg-cyan-500/10"
               }`}
             >
-              <Download className="w-3 h-3" />
+              <Download className="w-3.5 h-3.5" />
               Export
             </button>
             {exportOpen && (
@@ -327,9 +329,9 @@ export default function EventLog() {
             <button
               type="button"
               onClick={handleClear}
-              className="flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-2.5 py-1.5 rounded-lg border border-zinc-800 hover:border-red-500/20 hover:bg-red-500/5"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 hover:text-red-300 transition-colors px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-red-500/40 hover:bg-red-500/10"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
               Clear
             </button>
           )}
@@ -339,7 +341,7 @@ export default function EventLog() {
       {/* ══ FILTERS ══ */}
       <div className="px-3 py-2 border-b border-zinc-800 flex flex-col gap-2 shrink-0">
         {/* Direction toggle */}
-        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-0.5">
+        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-700 rounded-lg p-1">
           {(["all", "out", "in"] as const).map((d) => {
             const conf = DIRECTION_CONFIG[d];
             const isActive = direction === d;
@@ -348,10 +350,10 @@ export default function EventLog() {
                 type="button"
                 key={d}
                 onClick={() => setDirection(d)}
-                className={`flex-1 flex items-center justify-center gap-1.5 text-[10px] font-medium px-2 py-1.5 rounded-md transition-all duration-150 border ${
+                className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold px-2 py-2 rounded-md transition-all duration-150 border ${
                   isActive
                     ? conf.activeClass
-                    : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800"
+                    : "text-zinc-500 border-transparent hover:text-zinc-300 hover:bg-zinc-800"
                 }`}
               >
                 {conf.icon}
@@ -363,18 +365,18 @@ export default function EventLog() {
 
         {/* Live search */}
         <div
-          className={`flex items-center gap-2 bg-zinc-900 border rounded-lg px-3 h-8 transition-all ${
+          className={`flex items-center gap-2 bg-zinc-900 border rounded-lg px-3 h-9 transition-all ${
             regexError
-              ? "border-red-500/60 shadow-[0_0_0_2px_rgba(239,68,68,0.08)]"
+              ? "border-red-500/60 shadow-[0_0_0_2px_rgba(239,68,68,0.1)]"
               : searchFocus
-                ? "border-zinc-500"
+                ? "border-violet-500/60 shadow-[0_0_0_2px_rgba(139,92,246,0.08)]"
                 : debouncedFilter
                   ? "border-zinc-600"
-                  : "border-zinc-800 hover:border-zinc-700"
+                  : "border-zinc-700 hover:border-zinc-600"
           }`}
         >
           <Search
-            className={`w-3 h-3 shrink-0 transition-colors ${searchFocus ? "text-zinc-400" : "text-zinc-700"}`}
+            className={`w-3.5 h-3.5 shrink-0 transition-colors ${searchFocus ? "text-violet-400" : "text-zinc-600"}`}
           />
           <input
             value={filterInput}
@@ -382,22 +384,22 @@ export default function EventLog() {
             onFocus={() => setSearchFocus(true)}
             onBlur={() => setSearchFocus(false)}
             placeholder="live regex filter…"
-            className="flex-1 min-w-0 bg-transparent text-[11px] font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-700"
+            className="flex-1 min-w-0 bg-transparent text-[12px] font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600"
           />
           {filterInput && (
             <button
               type="button"
               onClick={() => setFilterInput("")}
-              className="text-zinc-600 hover:text-zinc-300 shrink-0"
+              className="text-zinc-500 hover:text-zinc-200 shrink-0 transition-colors"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
         {regexError && (
-          <p className="text-[10px] text-red-400 flex items-center gap-1">
-            <X className="w-2.5 h-2.5" />
+          <p className="text-[11px] font-medium text-red-400 flex items-center gap-1.5">
+            <X className="w-3.5 h-3.5" />
             Invalid regex
           </p>
         )}

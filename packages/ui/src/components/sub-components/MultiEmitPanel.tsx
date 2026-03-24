@@ -14,6 +14,15 @@ export interface MultiEmitResult {
  * Provides a collapsible UI for sending batch emissions with real-time progress tracking
  * and result visualization. Supports cancellation of ongoing operations.
  *
+ * @accessibility
+ * - Toggle button has aria-label and aria-expanded indicating panel state
+ * - Count and delay inputs have accessible labels and focus rings
+ * - Run/Cancel buttons have aria-label and focus indicators
+ * - Results display has accessible structure with clear feedback
+ * - Clear button has focus ring for keyboard navigation
+ * - Loader icon is decorative (aria-hidden)
+ * - Progress status is announced via text content
+ *
  * @component
  * @example
  * ```tsx
@@ -66,9 +75,11 @@ export function MultiEmitPanel({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md border ${open ? "text-violet-400 border-violet-500/30 bg-violet-500/5" : "text-zinc-600 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"}`}
+        aria-label="Toggle multi-emit panel"
+        aria-expanded={open}
+        className={`flex items-center gap-1.5 text-[10px] transition-all px-2 py-1 rounded-md border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 ${open ? "text-violet-400 border-violet-500/30 bg-violet-500/5" : "text-zinc-600 border-zinc-800 hover:text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"}`}
       >
-        <Repeat2 className="w-3 h-3" />
+        <Repeat2 className="w-3 h-3" aria-hidden="true" />
         Multi
       </button>
       {open && (
@@ -88,7 +99,7 @@ export function MultiEmitPanel({
                 max={100}
                 value={count}
                 onChange={(e) => setCount(Number(e.target.value))}
-                className="w-14 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600"
+                className="w-14 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600 focus-visible:ring-1 focus-visible:ring-blue-500/40"
               />
             </div>
             <div className="flex items-center gap-1.5">
@@ -106,7 +117,7 @@ export function MultiEmitPanel({
                 step={50}
                 value={delay}
                 onChange={(e) => setDelay(Number(e.target.value))}
-                className="w-16 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600"
+                className="w-16 text-[11px] font-mono text-center bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 outline-none focus:border-zinc-600 focus-visible:ring-1 focus-visible:ring-blue-500/40"
               />
             </div>
             <div className="flex-1" />
@@ -117,9 +128,10 @@ export function MultiEmitPanel({
                   cancelRef.current = true;
                   setRunning(false);
                 }}
-                className="flex items-center gap-1.5 text-[10px] text-red-400 border border-red-500/30 hover:bg-red-500/10 rounded-lg px-3 py-1.5 transition-colors"
+                aria-label="Cancel batch emission"
+                className="flex items-center gap-1.5 text-[10px] text-red-400 border border-red-500/30 hover:bg-red-500/10 rounded-lg px-3 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3 h-3" aria-hidden="true" />
                 Cancel
               </button>
             ) : (
@@ -127,16 +139,17 @@ export function MultiEmitPanel({
                 type="button"
                 onClick={run}
                 disabled={disabled}
-                className="flex items-center gap-1.5 text-[10px] text-violet-400 border border-violet-500/30 hover:bg-violet-500/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 transition-colors"
+                aria-label={`Run ${count} batch emissions with ${delay}ms delay between each`}
+                className="flex items-center gap-1.5 text-[10px] text-violet-400 border border-violet-500/30 hover:bg-violet-500/10 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
               >
-                <Repeat2 className="w-3 h-3" />
+                <Repeat2 className="w-3 h-3" aria-hidden="true" />
                 Run ×{count}
               </button>
             )}
           </div>
           {running && (
-            <div className="flex items-center gap-2 px-3 pb-2.5">
-              <Loader2 className="w-3 h-3 text-violet-400 animate-spin" />
+            <div className="flex items-center gap-2 px-3 pb-2.5" role="status" aria-live="polite">
+              <Loader2 className="w-3 h-3 text-violet-400 animate-spin" aria-hidden="true" />
               <span className="text-[10px] text-zinc-500">
                 Sending {count} emits…
               </span>
@@ -157,7 +170,8 @@ export function MultiEmitPanel({
                 <button
                   type="button"
                   onClick={() => setResults([])}
-                  className="text-[9px] text-zinc-700 hover:text-zinc-400"
+                  aria-label="Clear results"
+                  className="text-[9px] text-zinc-700 hover:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
                 >
                   Clear
                 </button>

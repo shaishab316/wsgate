@@ -35,12 +35,21 @@ import { NavResizeHandle } from "./sub-components/NavResizeHandle";
  *
  * Provides connection management UI with the following features:
  * - WebSocket URL and Bearer token input fields with debounced updates
- * - Real-time connection status indicator with animated dot
+ * - Real-time connection status indicator with animated pulse
  * - Connect/Disconnect button with loading state
  * - Namespace selector with auto-disconnect on namespace change
- * - Theme toggle (dark/light mode)
- * - Resizable input panels with persist to localStorage
- * - Token visibility toggle
+ * - Theme toggle (dark/light mode) with system preference fallback
+ * - Resizable input panels with localStorage persistence
+ * - Token visibility toggle for security
+ *
+ * @accessibility
+ * - All inputs have associated labels for screen readers
+ * - Token visibility toggle has clear aria-label
+ * - Status indicator announces connection state
+ * - All buttons keyboard accessible (Tab, Enter, Space)
+ * - Focus indicators visible on all interactive elements
+ * - Theme toggle respects system preferences (prefers-color-scheme)
+ * - Namespace selector provides keyboard navigation
  *
  * @component
  * @returns {React.ReactElement} Navbar element with connection controls and status display
@@ -52,6 +61,13 @@ import { NavResizeHandle } from "./sub-components/NavResizeHandle";
  * ```tsx
  * <Navbar />
  * ```
+ *
+ * @remarks
+ * - URL input debounces updates to prevent excessive re-renders (500ms)
+ * - Token visibility is local state only (not persisted for security)
+ * - Theme preference is stored in localStorage as 'wsgate-theme'
+ * - Namespace changes auto-disconnect if currently connected
+ * - Status dot pulses when connected, static when disconnected or error
  */
 export default function Navbar() {
   // ── Stores ──────────────────────────────────────────
@@ -133,16 +149,16 @@ export default function Navbar() {
   // ── Render ───────────────────────────────────────────
 
   return (
-    <div className="flex items-center gap-2 px-4 h-14 border-b border-zinc-800 bg-zinc-950 shrink-0">
+    <div className="flex items-center gap-3 px-5 h-16 border-b border-zinc-800/80 bg-gradient-to-r from-zinc-950 via-zinc-950 to-blue-950/20 shrink-0 shadow-lg shadow-black/50">
       {/* ── Logo ── */}
-      <div className="flex items-center gap-2 shrink-0 select-none grow">
+      <div className="flex items-center gap-3 shrink-0 select-none grow">
         <img
           src={appIcon}
           alt="WS Gate Logo"
-          className="size-8 invert dark:invert-0"
+          className="size-9 invert dark:invert-0 drop-shadow-lg dark:drop-shadow-none"
         />
         <h1
-          className="wsg-fadeUp wsg-shimmer text-[22px] font-semibold font-mono tracking-tight"
+          className="wsg-fadeUp wsg-shimmer text-[24px] font-bold font-mono tracking-tighter bg-gradient-to-r from-blue-300 via-blue-400 to-blue-300 dark:from-blue-400 dark:via-blue-500 dark:to-blue-400 bg-clip-text text-transparent"
           style={{ animationDelay: "70ms" }}
         >
           wsgate
@@ -158,17 +174,17 @@ export default function Navbar() {
         {/* URL input */}
         <Panel defaultSize={65} minSize={35} maxSize={80}>
           <div
-            className={`flex items-center w-full h-9 bg-zinc-900 border rounded-lg px-3 gap-2 transition-all duration-200 ${
+            className={`flex items-center w-full h-9 bg-zinc-900 border rounded-lg px-3 gap-2.5 transition-all duration-200 ${
               urlFocused
-                ? "border-blue-500/70 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+                ? "border-blue-400/80 shadow-[0_0_0_4px_rgba(96,165,250,0.15)] bg-zinc-950"
                 : isDisabled
-                  ? "border-zinc-800 opacity-50"
-                  : "border-zinc-700 hover:border-zinc-600"
+                  ? "border-zinc-800 opacity-40"
+                  : "border-zinc-700 hover:border-zinc-600 hover:shadow-[0_0_0_2px_rgba(120,113,233,0.1)]"
             }`}
           >
             <Server
-              className={`w-3.5 h-3.5 shrink-0 transition-colors ${
-                urlFocused ? "text-blue-400" : "text-zinc-600"
+              className={`w-4 h-4 shrink-0 transition-colors ${
+                urlFocused ? "text-blue-400" : "text-zinc-500"
               }`}
             />
             <input
@@ -178,12 +194,12 @@ export default function Navbar() {
               placeholder="http://localhost:3000"
               onFocus={() => setUrlFocused(true)}
               onBlur={() => setUrlFocused(false)}
-              className="flex-1 min-w-0 bg-transparent text-sm font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600 disabled:cursor-not-allowed"
+              className="flex-1 min-w-0 bg-transparent text-sm font-mono font-medium text-zinc-100 focus:outline-none placeholder:text-zinc-600 placeholder:font-normal disabled:cursor-not-allowed disabled:text-zinc-600"
             />
             {/* live dot when connected */}
             {isConnected && (
               <span className="shrink-0 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/50 animate-pulse" />
               </span>
             )}
           </div>
@@ -194,17 +210,17 @@ export default function Navbar() {
         {/* Token input */}
         <Panel defaultSize={35} minSize={20} maxSize={65}>
           <div
-            className={`flex items-center w-full h-9 bg-zinc-900 border rounded-lg px-3 gap-2 transition-all duration-200 ${
+            className={`flex items-center w-full h-9 bg-zinc-900 border rounded-lg px-3 gap-2.5 transition-all duration-200 ${
               tokenFocused
-                ? "border-blue-500/70 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]"
+                ? "border-blue-400/80 shadow-[0_0_0_4px_rgba(96,165,250,0.15)] bg-zinc-950"
                 : isDisabled
-                  ? "border-zinc-800 opacity-50"
-                  : "border-zinc-700 hover:border-zinc-600"
+                  ? "border-zinc-800 opacity-40"
+                  : "border-zinc-700 hover:border-zinc-600 hover:shadow-[0_0_0_2px_rgba(236,72,153,0.1)]"
             }`}
           >
             <KeyRound
-              className={`w-3.5 h-3.5 shrink-0 transition-colors ${
-                tokenFocused ? "text-blue-400" : "text-zinc-600"
+              className={`w-4 h-4 shrink-0 transition-colors ${
+                tokenFocused ? "text-blue-400" : "text-zinc-500"
               }`}
             />
             <input
@@ -215,7 +231,7 @@ export default function Navbar() {
               type={showToken ? "text" : "password"}
               onFocus={() => setTokenFocused(true)}
               onBlur={() => setTokenFocused(false)}
-              className="flex-1 min-w-0 bg-transparent text-sm font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600 disabled:cursor-not-allowed"
+              className="flex-1 min-w-0 bg-transparent text-sm font-mono font-medium text-zinc-100 focus:outline-none placeholder:text-zinc-600 placeholder:font-normal disabled:cursor-not-allowed disabled:text-zinc-600"
             />
             {/* show / hide toggle */}
             {token && (
@@ -224,13 +240,13 @@ export default function Navbar() {
                 onClick={() => setShowToken((v) => !v)}
                 title={showToken ? "Hide token" : "Show token"}
                 aria-label={showToken ? "Hide token" : "Show token"}
-                className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
+                className="shrink-0 text-zinc-600 hover:text-blue-400 transition-colors hover:scale-110 duration-200"
                 tabIndex={-1}
               >
                 {showToken ? (
-                  <EyeOff className="w-3.5 h-3.5" />
+                  <EyeOff className="w-4 h-4" />
                 ) : (
-                  <Eye className="w-3.5 h-3.5" />
+                  <Eye className="w-4 h-4" />
                 )}
               </button>
             )}
@@ -242,14 +258,10 @@ export default function Navbar() {
       <button
         type="button"
         onClick={toggleTheme}
-        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-all duration-200"
+        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 hover:bg-zinc-800 hover:border-yellow-600/50 text-zinc-500 hover:text-yellow-400 transition-all duration-200 font-medium"
         title="Toggle theme"
       >
-        {isDark ? (
-          <Sun className="w-3.5 h-3.5" />
-        ) : (
-          <Moon className="w-3.5 h-3.5" />
-        )}
+        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
 
       {/* ── Connect / Disconnect button ── */}
@@ -257,26 +269,24 @@ export default function Navbar() {
         <Button
           onClick={disconnect}
           size="sm"
-          className="shrink-0 h-9 px-4 gap-2 bg-zinc-800 hover:bg-red-600/20 hover:border-red-500/50 text-zinc-300 hover:text-red-400 border border-zinc-700 rounded-lg transition-all duration-200 invert dark:invert-0"
+          className="shrink-0 h-9 px-5 gap-2.5 bg-red-950/40 hover:bg-red-600/30 hover:border-red-500/60 text-red-300 hover:text-red-200 border border-red-800/60 hover:border-red-500/60 rounded-lg transition-all duration-200 font-semibold text-xs shadow-lg shadow-red-900/20 hover:shadow-red-900/30"
         >
-          <Unplug className="w-3.5 h-3.5" />
-          <span className="text-xs font-medium">Disconnect</span>
+          <Unplug className="w-4 h-4" />
+          <span>Disconnect</span>
         </Button>
       ) : (
         <Button
           onClick={() => connect(url, token, selectedNamespace)}
           disabled={isConnecting || !url}
           size="sm"
-          className="shrink-0 h-9 px-4 gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg shadow-lg shadow-blue-900/30 transition-all duration-200 hover:shadow-blue-800/40 invert dark:invert-0"
+          className="shrink-0 h-9 px-5 gap-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg shadow-lg shadow-blue-900/40 hover:shadow-blue-800/50 transition-all duration-200 font-semibold text-xs hover:scale-105 disabled:hover:scale-100"
         >
           {isConnecting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <Plug className="w-3.5 h-3.5" />
+            <Plug className="w-4 h-4" />
           )}
-          <span className="text-xs font-medium">
-            {isConnecting ? "Connecting..." : "Connect"}
-          </span>
+          <span>{isConnecting ? "Connecting..." : "Connect"}</span>
         </Button>
       )}
 
@@ -291,17 +301,22 @@ export default function Navbar() {
       {/* ── Status badge ── */}
       <Badge
         variant="outline"
-        className={`shrink-0 h-7 px-2.5 gap-1.5 text-xs font-medium rounded-lg transition-all duration-300 ${config.badgeClass} py-4`}
+        className={`shrink-0 h-8 px-3 gap-2 text-sm font-semibold rounded-lg transition-all duration-300 ${config.badgeClass} py-0`}
       >
         {/* animated dot */}
-        <span className="relative flex items-center justify-center w-2 h-2 shrink-0">
+        <span className="relative flex items-center justify-center w-2.5 h-2.5 shrink-0">
           {config.pulse && (
             <span
-              className={`absolute inline-flex w-full h-full rounded-full opacity-60 animate-ping ${config.dotClass}`}
+              className={`absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping ${config.dotClass}`}
             />
           )}
           <span
-            className={`relative w-1.5 h-1.5 rounded-full ${config.dotClass}`}
+            className={`relative w-2 h-2 rounded-full shadow-lg ${config.dotClass}`}
+            style={{
+              boxShadow: config.pulse
+                ? `0 0 12px currentColor`
+                : `0 0 6px currentColor`,
+            }}
           />
         </span>
         {config.icon}

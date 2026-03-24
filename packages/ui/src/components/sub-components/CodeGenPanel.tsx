@@ -429,7 +429,7 @@ wscat -c "${url.replace("http", "ws")}"
 function LangDot({ color }: { color: string }) {
   return (
     <span
-      className="w-1.5 h-1.5 rounded-full shrink-0"
+      className="w-2 h-2 rounded-full shrink-0 ring-1 ring-white/20"
       style={{ backgroundColor: color }}
     />
   );
@@ -552,15 +552,15 @@ export default function CodeGenPanel({
       */}
       <div
         ref={modalRef}
-        className="relative w-full max-w-3xl h-[80vh] flex flex-col rounded-2xl border border-zinc-700/80 bg-zinc-950 shadow-2xl shadow-black/70 overflow-hidden"
+        className="relative w-full max-w-3xl h-[80vh] flex flex-col rounded-xl border border-zinc-600/40 bg-zinc-950 shadow-2xl shadow-black/80 overflow-hidden"
       >
         {/* ── Header — shrink-0 ── */}
-        <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-zinc-800 shrink-0">
-          <div className="w-6 h-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
-            <Code2 className="w-3.5 h-3.5 text-zinc-400" />
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-zinc-700/50 bg-linear-to-b from-zinc-900/80 to-zinc-950/40 shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-linear-to-br from-zinc-700 to-zinc-800 border border-zinc-600/60 flex items-center justify-center shrink-0 shadow-sm">
+            <Code2 className="w-4 h-4 text-blue-300" />
           </div>
           <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-xs font-semibold text-zinc-100 leading-none">
+            <span className="text-sm font-bold text-zinc-50 leading-tight tracking-tight">
               Code Generation
             </span>
           </div>
@@ -568,7 +568,7 @@ export default function CodeGenPanel({
           {/* Active lang badge */}
           <Badge
             variant="outline"
-            className={`text-[9px] gap-1 px-1.5 h-5 border shrink-0 ${conf.color}`}
+            className={`text-[10px] gap-1.5 px-2 h-6 border shrink-0 font-semibold shadow-sm ${conf.color}`}
           >
             <LangDot color={conf.dot} />
             {conf.label}
@@ -578,29 +578,29 @@ export default function CodeGenPanel({
           <button
             type="button"
             onClick={onClose}
-            className="w-6 h-6 rounded-md flex items-center justify-center text-zinc-600 hover:text-zinc-200 hover:bg-zinc-800 transition-all shrink-0"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-red-300 hover:bg-red-500/10 hover:border hover:border-red-500/30 transition-all border border-transparent shrink-0"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* ── Starred row — shrink-0, only when starred ── */}
         {starred.size > 0 && (
-          <div className="flex items-center gap-2 px-3 pt-2 shrink-0">
-            <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500 shrink-0" />
-            <span className="text-[9px] text-zinc-600 uppercase tracking-widest shrink-0">
+          <div className="flex items-center gap-2.5 px-4 pt-3 pb-2 bg-yellow-500/5 border-b border-yellow-500/10 shrink-0">
+            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />
+            <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-wider shrink-0">
               Favorites
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               {LANG_ORDER.filter((id) => starred.has(id)).map((id) => (
                 <button
                   type="button"
                   key={id}
                   onClick={() => setLang(id)}
-                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded border transition-all ${
+                  className={`text-[11px] font-bold px-2 py-1 rounded border transition-all ${
                     lang === id
                       ? CODE_LANGS[id].color
-                      : "border-zinc-700 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
+                      : "border-zinc-700/50 text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/70 hover:border-zinc-600"
                   }`}
                 >
                   {CODE_LANGS[id].badge}
@@ -611,7 +611,7 @@ export default function CodeGenPanel({
         )}
 
         {/* ── Language tab strip — shrink-0 ── */}
-        <div className="flex gap-0.5 px-3 pt-2 pb-1.5 overflow-x-auto shrink-0 scrollbar-none">
+        <div className="flex gap-1 px-4 pt-2.5 pb-2 overflow-x-auto shrink-0 scrollbar-none bg-zinc-950/40">
           {LANG_ORDER.map((id) => {
             const c = CODE_LANGS[id];
             const isActive = lang === id;
@@ -622,10 +622,10 @@ export default function CodeGenPanel({
                 <button
                   type="button"
                   onClick={() => setLang(id)}
-                  className={`flex items-center gap-1.5 pl-2.5 pr-7 py-1.5 rounded-lg text-[10px] font-semibold border transition-all duration-150 ${
+                  className={`flex items-center gap-1.5 pl-3 pr-8 py-1.5 rounded-md text-[11px] font-semibold border transition-all duration-150 ${
                     isActive
-                      ? c.color
-                      : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800 hover:border-zinc-700"
+                      ? c.color + " shadow-md"
+                      : "text-zinc-600 border-transparent hover:text-zinc-300 hover:bg-zinc-800/60 hover:border-zinc-700/50"
                   }`}
                 >
                   <LangDot color={c.dot} />
@@ -646,9 +646,9 @@ export default function CodeGenPanel({
                   }`}
                 >
                   {isStarred ? (
-                    <Star className="w-2.5 h-2.5 fill-yellow-400" />
+                    <Star className="w-3 h-3 fill-yellow-400" />
                   ) : (
-                    <StarOff className="w-2.5 h-2.5" />
+                    <StarOff className="w-3 h-3" />
                   )}
                 </button>
               </div>
@@ -657,24 +657,24 @@ export default function CodeGenPanel({
         </div>
 
         {/* ── Active lang bar + copy — shrink-0 ── */}
-        <div className="flex items-center justify-between px-3 py-1.5 border-t border-b border-zinc-800 bg-zinc-900/50 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 py-2 border-t border-b border-zinc-700/50 bg-gradient-to-r from-zinc-900/60 to-zinc-950/40 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <LangDot color={conf.dot} />
             <span
-              className={`text-[10px] font-semibold ${conf.color.split(" ")[0]}`}
+              className={`text-[11px] font-bold tracking-tight ${conf.color.split(" ")[0]}`}
             >
               {conf.label}
             </span>
             {starred.has(lang) && (
-              <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+              <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 shrink-0" />
             )}
-            <span className="text-zinc-700 text-[10px]">·</span>
-            <span className="text-[10px] text-zinc-600 font-mono">
+            <span className="text-zinc-700 text-[11px]">·</span>
+            <span className="text-[11px] text-zinc-500 font-mono font-semibold truncate">
               {event.event}
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {/* Format — triggers Monaco's built-in formatDocument action */}
             <button
               type="button"
@@ -683,10 +683,10 @@ export default function CodeGenPanel({
                   ?.getAction("editor.action.formatDocument")
                   ?.run()
               }
-              className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 hover:border-zinc-500 transition-all"
+              className="flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-md border border-zinc-700/50 text-zinc-500 hover:text-blue-300 hover:bg-blue-500/10 hover:border-blue-500/30 transition-all"
               title="Format code (Alt+Shift+F)"
             >
-              <Braces className="w-3 h-3" />
+              <Braces className="w-3.5 h-3.5" />
               Format
             </button>
 
@@ -694,20 +694,20 @@ export default function CodeGenPanel({
             <button
               type="button"
               onClick={handleCopy}
-              className={`flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-lg border transition-all ${
+              className={`flex items-center gap-1.5 text-[11px] font-medium px-3 py-1.5 rounded-md border transition-all ${
                 copied
-                  ? "border-emerald-500/40 text-emerald-400 bg-emerald-500/5"
-                  : "border-zinc-700 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 hover:border-zinc-500"
+                  ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10"
+                  : "border-zinc-700/50 text-zinc-500 hover:text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-500/30"
               }`}
             >
               {copied ? (
                 <>
-                  <Check className="w-3 h-3" />
+                  <Check className="w-3.5 h-3.5" />
                   Copied!
                 </>
               ) : (
                 <>
-                  <Copy className="w-3 h-3" />
+                  <Copy className="w-3.5 h-3.5" />
                   Copy code
                 </>
               )}
@@ -740,19 +740,19 @@ export default function CodeGenPanel({
         </div>
 
         {/* ── Footer — install hint — shrink-0 ── */}
-        <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800 bg-zinc-900/60 shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <Terminal className="w-3 h-3 text-zinc-600 shrink-0" />
-            <code className="text-[10px] text-zinc-500 font-mono truncate">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-zinc-700/50 bg-gradient-to-b from-zinc-900/40 to-zinc-950/80 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Terminal className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
+            <code className="text-[11px] text-zinc-500 font-mono font-medium truncate">
               {INSTALL_HINT[lang]}
             </code>
           </div>
           <button
             onClick={() => navigator.clipboard.writeText(INSTALL_HINT[lang])}
             type="button"
-            className="shrink-0 flex items-center gap-1 text-[9px] text-zinc-600 hover:text-zinc-300 transition-colors px-1.5 py-0.5 rounded hover:bg-zinc-800 ml-2"
+            className="shrink-0 flex items-center gap-1.5 text-[10px] font-medium text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/60 transition-colors px-2 py-1 rounded-md border border-transparent hover:border-zinc-700/50 ml-3"
           >
-            <Copy className="w-2.5 h-2.5" />
+            <Copy className="w-3 h-3" />
             copy
           </button>
         </div>

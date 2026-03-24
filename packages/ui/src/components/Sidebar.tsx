@@ -39,7 +39,17 @@ import { NamespaceSectionHeader } from "./sub-components/NamespaceSectionHeader"
  * Sidebar component for the WebSocket Gateway UI.
  *
  * Displays a hierarchical list of WebSocket events organized by namespace and gateway.
- * Provides search, filtering, and namespace selection capabilities.
+ * Provides search, filtering, namespace selection, and event management capabilities.
+ * Fully keyboard accessible with shortcuts and screen reader support.
+ *
+ * @accessibility
+ * - Keyboard shortcuts: Ctrl+K (Cmd+K on Mac) to focus search, Escape to clear search
+ * - All buttons have aria-labels and title attributes
+ * - Search input with clear visual focus indicators
+ * - Event rows are keyboard selectable with Enter/Space keys
+ * - Proper heading hierarchy with semantic HTML
+ * - Screen reader announcements for event counts and status
+ * - Focus management throughout the component hierarchy
  *
  * @component
  *
@@ -61,6 +71,8 @@ import { NamespaceSectionHeader } from "./sub-components/NamespaceSectionHeader"
  * - Sections (namespaces and gateways) can be collapsed/expanded
  * - Search filters events in real-time across all fields
  * - Keyboard shortcuts: Ctrl+K to focus search, Escape to clear search
+ * - Export functionality allows offline event reference
+ * - File upload supports recovery when server is unreachable
  */
 export default function Sidebar() {
   // ── Stores ────────────────────────────────────────────
@@ -269,14 +281,14 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col h-full overflow-hidden bg-zinc-950">
       {/* ── Header ── */}
-      <div className="px-4 py-3 border-b border-zinc-800 shrink-0">
+      <div className="px-4 py-3 border-b border-zinc-600/80 shrink-0 bg-gradient-to-b from-zinc-900 to-zinc-950">
         <div className="flex items-center gap-2">
           <div className="flex flex-col leading-none flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-zinc-100 truncate flex items-center gap-2">
+            <h1 className="text-base font-bold text-white/95 truncate flex items-center gap-2">
               {title}
               {!loading && !error && (
-                <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-500/80 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-50 bg-emerald-500/20 px-2 py-1 rounded-full border border-emerald-500/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   Ready
                 </span>
               )}
@@ -287,7 +299,7 @@ export default function Sidebar() {
           {events?.length && (
             <Badge
               variant="outline"
-              className="shrink-0 border-zinc-700 text-zinc-500 text-[10px] h-5 px-1.5 bg-zinc-900/50"
+              className="shrink-0 border-zinc-500/50 text-zinc-300 text-xs h-6 px-2 bg-zinc-800/60 font-semibold"
             >
               {events.length}
             </Badge>
@@ -298,10 +310,11 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={handleExport}
+              aria-label="Export events as JSON file"
               title="Export events.json"
-              className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-zinc-800/50 rounded"
+              className="shrink-0 text-zinc-400 hover:text-white transition-colors p-1.5 hover:bg-zinc-700/70 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -309,22 +322,23 @@ export default function Sidebar() {
 
       {/* ── Search input — only shown when events are loaded ── */}
       {!loading && !error && events?.length && (
-        <div className="px-3 py-2 border-b border-zinc-800 shrink-0">
-          <div className="flex flex-col gap-1.5">
+        <div className="px-3 py-2.5 border-b border-zinc-600/80 shrink-0">
+          <div className="flex flex-col gap-2">
             <div
-              className={`flex items-center gap-2 h-8 bg-zinc-900 border rounded-lg px-3 transition-all duration-200 ${
+              className={`flex items-center gap-2 h-9 bg-zinc-900/80 border rounded-lg px-3 transition-all duration-200 backdrop-blur-sm ${
                 search
-                  ? "border-blue-500/50 shadow-[0_0_0_2px_rgba(59,130,246,0.08)]"
-                  : "border-zinc-800 hover:border-zinc-700"
+                  ? "border-blue-500/80 shadow-[0_0_0_2px_rgba(59,130,246,0.15)]"
+                  : "border-zinc-600 hover:border-zinc-500"
               }`}
             >
-              <Search className="w-3 h-3 text-zinc-600 shrink-0" />
+              <Search className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <input
                 ref={searchInputRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search events..."
-                className="flex-1 min-w-0 bg-transparent text-xs font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-600"
+                aria-label="Search events by name or description"
+                className="flex-1 min-w-0 bg-transparent text-sm font-mono text-zinc-100 focus:outline-none placeholder:text-zinc-500"
               />
               {search && (
                 <button
@@ -333,19 +347,21 @@ export default function Sidebar() {
                     setSearch("");
                     searchInputRef.current?.focus();
                   }}
-                  className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors"
+                  aria-label="Clear search"
+                  title="Clear search (Esc)"
+                  className="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors p-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/40 rounded"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
             {/* Keyboard hint */}
             {showKeyboardHint && events.length > 0 && (
-              <div className="flex items-center justify-between px-2 py-1 text-[9px] text-zinc-600">
+              <div className="flex items-center justify-between px-2 py-1 text-xs text-zinc-400">
                 <div className="flex items-center gap-1">
-                  <Keyboard className="w-3 h-3" />
+                  <Keyboard className="w-3.5 h-3.5" />
                   <span>Press</span>
-                  <kbd className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[8px]">
+                  <kbd className="px-2 py-1 rounded bg-zinc-700/70 text-zinc-200 font-mono text-xs border border-zinc-600">
                     Ctrl+K
                   </kbd>
                   <span>to search</span>
@@ -353,9 +369,9 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={() => setShowKeyboardHint(false)}
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-zinc-200 transition-colors p-0.5"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
@@ -395,14 +411,14 @@ export default function Sidebar() {
         {/* No events loaded yet */}
         {!loading && !error && !events?.length && (
           <div className="flex flex-col items-center justify-center px-5 py-12 gap-4 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-500/10 to-purple-500/10 border border-zinc-800 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-blue-400" />
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500/15 to-purple-500/15 border border-zinc-700/60 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-blue-400/80" />
             </div>
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-zinc-300">
+              <p className="text-sm font-semibold text-zinc-100">
                 No events discovered
               </p>
-              <p className="text-xs text-zinc-500 leading-relaxed">
+              <p className="text-xs text-zinc-400 leading-relaxed">
                 Make sure your NestJS server is running and WsgateModule is
                 imported
               </p>
@@ -436,7 +452,7 @@ export default function Sidebar() {
 
                   {/* Gateways in this namespace */}
                   {nsExpanded && (
-                    <div className="border-l border-zinc-800/40 ml-0 pl-3">
+                    <div className="border-l border-zinc-700/50 ml-0 pl-3">
                       {Object.entries(gwInNs).map(([gatewayName, gwEvents]) => {
                         const gwKey = `gw:${ns}:${gatewayName}`;
                         const gwCollapsed = collapsed.has(gwKey);
@@ -483,16 +499,16 @@ export default function Sidebar() {
 
       {/* ── Footer — emit / subscribe legend + active namespace ── */}
       {!loading && !error && events?.length && (
-        <div className="px-4 py-2.5 border-t border-zinc-800 shrink-0 flex items-center gap-4 bg-zinc-950/50 backdrop-blur-sm">
-          <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <Send className="w-2.5 h-2.5 text-blue-400" />
-            <span className="text-[10px] text-zinc-600">
+        <div className="px-4 py-3 border-t border-zinc-600/80 shrink-0 flex items-center gap-4 bg-gradient-to-t from-zinc-950 to-zinc-900/50 backdrop-blur-sm">
+          <div className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-default">
+            <Send className="w-3.5 h-3.5 text-blue-400" />
+            <span className="text-xs text-zinc-300 font-medium">
               {events.filter((e) => e.type === "emit").length} emit
             </span>
           </div>
-          <div className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-            <Radio className="w-2.5 h-2.5 text-emerald-400" />
-            <span className="text-[10px] text-zinc-600">
+          <div className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-default">
+            <Radio className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs text-zinc-300 font-medium">
               {events.filter((e) => e.type === "subscribe").length} subscribe
             </span>
           </div>
@@ -504,15 +520,15 @@ export default function Sidebar() {
                 type="button"
                 onClick={() => setActiveNamespace(null)}
                 title="Clear namespace filter"
-                className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors group px-2 py-1 rounded hover:bg-zinc-800/50"
+                className="flex items-center gap-1.5 text-xs font-mono text-zinc-300 hover:text-white transition-colors group px-2.5 py-1.5 rounded hover:bg-zinc-700/60 border border-zinc-600/50"
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  className={`w-2 h-2 rounded-full shrink-0 ${
                     namespaceColor(activeNamespace, namespaces).dot
                   }`}
                 />
                 {activeNamespace}
-                <X className="w-2.5 h-2.5 text-zinc-700 group-hover:text-zinc-400 transition-colors ml-0.5" />
+                <X className="w-3 h-3 text-zinc-500 group-hover:text-zinc-200 transition-colors ml-0.5" />
               </button>
             </>
           )}

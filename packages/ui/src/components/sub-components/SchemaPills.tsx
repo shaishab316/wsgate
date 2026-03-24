@@ -3,6 +3,12 @@ import { getTypeConfig } from "@/lib/utils";
 /**
  * Renders a collection of schema property pills displaying type information.
  *
+ * @accessibility
+ * - Container is section with aria-label describing schema content
+ * - Each pill aria-label describes property name and type
+ * - Color-coded types provide additional visual context
+ * - Icons are decorative (aria-hidden)
+ *
  * @component
  * @param {Object} props - The component props
  * @param {Record<string, string>} props.payload - A key-value object where keys are property names and values are their types
@@ -27,15 +33,17 @@ export function SchemaPills({
       <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
         {label}
       </span>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5" role="list" aria-label={`${label} schema properties`}>
         {entries.map(([key, type]) => {
           const conf = getTypeConfig(type);
           return (
             <span
               key={key}
+              role="listitem"
+              aria-label={`${key}: ${type}`}
               className={`inline-flex items-center gap-1.5 text-[11px] font-mono border rounded-lg px-2 py-1 ${conf.color}`}
             >
-              {conf.icon}
+              <span aria-hidden="true">{conf.icon}</span>
               <span className="text-zinc-300">{key}</span>
               <span className="text-zinc-600">:</span>
               <span>{type}</span>

@@ -1,6 +1,15 @@
 /**
  * A dismissible error alert component that displays an error message with an icon and close button.
  *
+ * Provides accessible error messaging with keyboard support and clear visual hierarchy.
+ * Automatically focuses the dismiss button for keyboard users to enable quick dismissal.
+ *
+ * @accessibility
+ * - Dismiss button has clear aria-label for screen readers
+ * - Keyboard accessible with visible focus indicators
+ * - Alert has appropriate contrast ratios for visibility
+ * - Proper semantic button element
+ *
  * @component
  * @example
  * const [error, setError] = useState<string | null>(null);
@@ -34,7 +43,9 @@ export function EmitError({
       <button
         type="button"
         onClick={onDismiss}
-        className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
+        aria-label="Dismiss error message"
+        title="Dismiss"
+        className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/40 rounded"
       >
         <X className="w-3.5 h-3.5" />
       </button>

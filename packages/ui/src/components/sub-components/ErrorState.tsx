@@ -12,6 +12,17 @@ import { useRef, useState } from "react";
 /**
  * ErrorState component — displays a connection failure UI with server URL editing and troubleshooting hints.
  *
+ * Provides an accessible error recovery interface with keyboard navigation support.
+ * Users can edit the server URL, retry connection, or upload a local configuration file.
+ * Includes helpful troubleshooting guidance and visual feedback during retry attempts.
+ *
+ * @accessibility
+ * - Proper form semantics with labeled input field
+ * - All buttons have aria-labels for screen readers
+ * - Full keyboard navigation support (Enter to submit in input)
+ * - Visible focus indicators on all interactive elements
+ * - Clear error messaging and troubleshooting checklist
+ *
  * @component
  * @example
  * ```tsx
@@ -24,12 +35,14 @@ import { useRef, useState } from "react";
  * @param {Object} props - Component props
  * @param {string} props.url - The original failed server URL
  * @param {(url: string) => void} props.onRetry - Callback fired when retry is clicked with the (possibly edited) URL
+ * @param {(file: File) => void} [props.onFileUpload] - Optional callback for handling uploaded configuration files
  *
  * @returns {JSX.Element} A centered error state UI with:
  *   - Error icon with animated pulse ring
- *   - Editable server URL input field
+ *   - Editable server URL input field with validation feedback
  *   - Troubleshooting checklist
  *   - Retry button (highlights blue when URL is modified)
+ *   - Optional file upload for local configuration
  *
  * @remarks
  * - The component maintains local state for the edited URL and does not affect the parent store.
@@ -99,7 +112,7 @@ export function ErrorState({
           Server URL
         </label>
 
-        <div
+          <div
           className={`flex items-center gap-2 w-full bg-zinc-900 border rounded-lg px-3 h-10 transition-all duration-200 ${
             focused
               ? "border-blue-500/60 shadow-[0_0_0_3px_rgba(59,130,246,0.08)]"
@@ -115,6 +128,7 @@ export function ErrorState({
           />
           <input
             name="server-url"
+            id="server-url"
             value={editUrl}
             onChange={(e) => setEditUrl(e.target.value)}
             onFocus={() => setFocused(true)}
@@ -128,8 +142,9 @@ export function ErrorState({
             <button
               type="button"
               onClick={handleReset}
+              aria-label="Reset to original URL"
               title="Reset to original"
-              className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-zinc-800/50 rounded"
+              className="shrink-0 text-zinc-600 hover:text-zinc-300 transition-colors p-1 hover:bg-zinc-800/50 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/40"
             >
               <X className="w-3 h-3" />
             </button>
@@ -170,10 +185,12 @@ export function ErrorState({
         type="button"
         onClick={handleRetry}
         disabled={retrying}
-        className={`w-full max-w-sm flex items-center justify-center gap-2 text-xs font-semibold rounded-lg px-4 py-3 border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+        aria-busy={retrying}
+        aria-label={isDirty ? "Save URL and retry connection" : "Retry connection"}
+        className={`w-full max-w-sm flex items-center justify-center gap-2 text-xs font-semibold rounded-lg px-4 py-3 border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-zinc-950 ${
           isDirty
-            ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50"
-            : "bg-zinc-900 hover:bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-zinc-100"
+            ? "bg-blue-600 hover:bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 focus-visible:ring-blue-500/40"
+            : "bg-zinc-900 hover:bg-zinc-800 border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-zinc-100 focus-visible:ring-zinc-500/40"
         }`}
       >
         <RefreshCw className={`w-4 h-4 ${retrying ? "animate-spin" : ""}`} />
@@ -195,13 +212,15 @@ export function ErrorState({
             type="file"
             accept=".json"
             onChange={handleFileChange}
+            aria-label="Upload local events.json configuration file"
             className="hidden"
           />
 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full max-w-sm flex items-center justify-center gap-2 text-xs font-semibold rounded-lg px-4 py-3 border border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/50 hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 transition-all duration-200"
+            aria-label="Upload events.json file"
+            className="w-full max-w-sm flex items-center justify-center gap-2 text-xs font-semibold rounded-lg px-4 py-3 border border-dashed border-zinc-700 hover:border-zinc-500 bg-zinc-900/50 hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-zinc-950"
           >
             <UploadCloud className="w-4 h-4" />
             Upload events.json
